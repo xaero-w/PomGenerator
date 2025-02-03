@@ -1,79 +1,27 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>POM Dependency Fetcher</title>
-    <style>
-        textarea {
-            width: 90%;
-            height: 150px;
-            resize: both;
-        }
-        input[type="text"] {
-            width: 90%;
-            margin: 10px 0;
-        }
-        .copy-button {
-            margin: 10px 0;
-        }
-        .log-box {
-            width: 90%;
-            height: 150px;
-            overflow-y: scroll;
-            background: #f9f9f9;
-            border: 1px solid #ddd;
-            padding: 10px;
-        }
-    </style>
-    <script>
-        function copyToClipboard(id) {
-            const textarea = document.getElementById(id);
-            textarea.select();
-            document.execCommand("copy");
-            alert("Copied!");
-        }
-    </script>
-</head>
-<body>
-    <h1>POM Dependency Fetcher</h1>
+<form method="post">
+    <textarea name="query" rows="5" cols="50">{{ query or '' }}</textarea>
+    <br>
+    <label for="custom_path">Save SBOM to (path):</label>
+    <input type="text" name="custom_path" value="sbom_custom">
+    <br>
+    <button type="submit">Search</button>
+</form>
 
-    <!-- Форма для ввода зависимостей -->
-    <form method="post" action="/fetch">
-        <label for="library">Enter libraries (comma, semicolon, or space-separated):</label><br>
-        <textarea id="library" name="library" placeholder="example-group/example-artifact1, example-group/example-artifact2"></textarea><br>
-        <input type="submit" value="Generate Dependencies">
-    </form>
+<hr>
 
-    {% if content %}
-    <h2>Generated POM.xml</h2>
-    <textarea id="generated-pom">{{ content }}</textarea>
-    <button class="copy-button" onclick="copyToClipboard('generated-pom')">Copy Generated POM.xml</button>
-
-    <h2>Full POM Template</h2>
-    <textarea id="full-pom" readonly>{{ full_pom }}</textarea>
-    <button class="copy-button" onclick="copyToClipboard('full-pom')">Copy Full POM Template</button>
-
-    <form method="post" action="/save_pom">
-        <label for="save_path">Enter directory path to save POM.xml:</label><br>
-        <input type="text" id="save_path" name="save_path" placeholder="/path/to/save/directory" required><br>
-        <input type="hidden" name="full_pom" value="{{ full_pom }}">
-        <input type="submit" value="Save and Execute">
-    </form>
+{% if results %}
+    <h2>Results:</h2>
+    <ul>
+    {% for result in results %}
+        <li>
+            <strong>{{ result.artifactId }}</strong> ({{ result.version }}) -
+            <a href="{{ result.url }}" target="_blank">View on Maven Central</a>
+        </li>
+    {% endfor %}
+    </ul>
+    {% if sbom_json_url and sbom_xml_url %}
+        <h3>Download SBOM:</h3>
+        <a href="{{ sbom_json_url }}">Download JSON</a> |
+        <a href="{{ sbom_xml_url }}">Download XML</a>
     {% endif %}
-
-    {% if logs %}
-    <h2>Recent Logs</h2>
-    <div class="log-box">
-        {% for log in logs %}
-            <p>{{ log }}</p>
-        {% endfor %}
-    </div>
-    {% endif %}
-
-    {% if result %}
-    <h2>Execution Result</h2>
-    <pre>{{ result }}</pre>
-    {% endif %}
-</body>
-</html>
+{% endif %}

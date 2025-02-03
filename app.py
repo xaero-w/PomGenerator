@@ -1,109 +1,118 @@
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, send_file
+import requests
+import subprocess
 import os
-import re
-from datetime import datetime
 
 app = Flask(__name__)
 
-# Путь к шаблону POM.xml
-TEMPLATE_POM_PATH = 'templates/pom.xml'
-# Путь к файлу логов
-LOG_FILE_PATH = 'logs.txt'
+MAVEN_SEARCH_API = "https://search.maven.org/solrsearch/select"
+SBOM_DIR = "sbom_files"
+os.makedirs(SBOM_DIR, exist_ok=True)
 
-@app.route('/', methods=['GET'])
+def search_maven_library(artifact_id, version):
+    params = {
+        "q": f"a:{artifact_id} AND v:{version}",
+        "wt": "json"
+    }
+    response = requests.get(MAVEN_SEARCH_API, params=params)
+    data = response.json()
+
+    if data["response"]["numFound"] > 0:
+        doc = data["response"]["docs"][0]
+        return {
+            "groupId": doc.get("g", "N/A"),
+            "artifactId": doc.get("a", "N/A"),
+            "version": doc.get("v", "N/A"),
+            "packaging": doc.get("p", "jar"),
+            "repository": "Maven Central",
+            "url": f"https://search.maven.org/artifact/{doc.get('g', 'N/A')}/{doc.get('a', 'N/A')}/{doc.get('v', 'N/A')}/{doc.get('p', 'jar')}"
+        }
+    return None
+
+def generate_sbom(libraries, custom_path):
+    os.makedirs(custom_path, exist_ok=True)
+    sbom_json_path = os.path.join(SBOM_DIR, "multi-lib-bom.json")
+    sbom_xml_path = os.path.join(SBOM_DIR, "multi-lib-bom.xml")
+    custom_json_path = os.path.join(custom_path, "multi-lib-bom.json")
+    custom_xml_path = os.path.join(custom_path, "multi-lib-bom.xml")
+    temp_pom = os.path.join(SBOM_DIR, "temp-pom.xml")
+
+    try:
+        # 1. Создаём временный POM-файл со всеми найденными библиотеками
+        with open(temp_pom, "w") as pom:
+            pom.write("""
+            <project xmlns="http://maven.apache.org/POM/4.0.0"
+                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+                <modelVersion>4.0.0</modelVersion>
+                <groupId>temp.sbom</groupId>
+                <artifactId>temp-sbom-project</artifactId>
+                <version>1.0-SNAPSHOT</version>
+                <dependencies>
+            """)
+            for lib in libraries:
+                pom.write(f"""
+                    <dependency>
+                        <groupId>{lib['groupId']}</groupId>
+                        <artifactId>{lib['artifactId']}</artifactId>
+                        <version>{lib['version']}</version>
+                    </dependency>
+                """)
+            pom.write("""
+                </dependencies>
+            </project>
+            """)
+
+        # 2. Генерируем SBOM в JSON и XML
+        subprocess.run([
+            "mvn", "org.cyclonedx:cyclonedx-maven-plugin:makeBom",
+            "-f", temp_pom,
+            f"-DoutputDirectory={SBOM_DIR}",
+            "-DoutputFormat=all",
+            "-DincludeCompileScope",
+            "-DincludeProvidedScope",
+            "-DincludeRuntimeScope",
+            "-DincludeSystemScope",
+            "-DincludeDependencies"
+        ], check=True)
+
+        # 3. Копируем SBOM в пользовательский каталог
+        subprocess.run(["cp", sbom_json_path, custom_json_path], check=True)
+        subprocess.run(["cp", sbom_xml_path, custom_xml_path], check=True)
+
+        return sbom_json_path, sbom_xml_path, custom_json_path, custom_xml_path
+    except subprocess.CalledProcessError:
+        return None, None, None, None
+
+@app.route('/', methods=['GET', 'POST'])
 def index():
-    # Читаем последние 10 логов
-    logs = []
-    if os.path.exists(LOG_FILE_PATH):
-        with open(LOG_FILE_PATH, 'r') as log_file:
-            logs = log_file.readlines()[-10:]  # Берём последние 10 записей
-    return render_template('index.html', logs=logs)
+    if request.method == 'POST':
+        search_query = request.form.get("query", "")
+        custom_path = request.form.get("custom_path", "sbom_custom")
+        libraries = [lib.strip() for lib in search_query.replace("\n", " ").replace(",", " ").replace(";", " ").split(" ") if lib.strip()]
 
-@app.route('/fetch', methods=['POST'])
-def fetch_dependencies():
-    # Получаем список зависимостей от пользователя
-    libraries = request.form.get('library')
+        found_libs = []
+        for lib in libraries:
+            if "/" in lib:
+                artifact_id, version = lib.split("/")
+                result = search_maven_library(artifact_id, version)
+                if result:
+                    found_libs.append(result)
 
-    if not libraries:
-        return "<p>Error: No libraries provided. Please go back and try again.</p>", 400
+        sbom_json, sbom_xml, custom_json, custom_xml = generate_sbom(found_libs, custom_path) if found_libs else (None, None, None, None)
 
-    try:
-        # Разделяем библиотеки (по запятой, точке с запятой или пробелу)
-        libraries = [lib.strip() for lib in re.split(r'[;,\\s]+', libraries) if lib.strip()]
+        return render_template("index.html", results=found_libs, query=search_query,
+                               sbom_json_url="/download_sbom/json" if sbom_json else None,
+                               sbom_xml_url="/download_sbom/xml" if sbom_xml else None)
 
-        dependencies = []
-        for library in libraries:
-            try:
-                # Проверяем формат: groupId/artifactId/version
-                parts = library.split('/')
-                if len(parts) == 3:
-                    group_id, artifact_id, version = parts
-                elif len(parts) == 2:
-                    group_id, artifact_id = parts
-                    version = "LATEST"  # Если версия отсутствует, подставляем "LATEST"
-                else:
-                    raise ValueError("Invalid format")
+    return render_template("index.html", results=None, query=None, sbom_json_url=None, sbom_xml_url=None)
 
-                # Формируем строку зависимости
-                dependency = f"""
-<dependency>
-    <groupId>{group_id}</groupId>
-    <artifactId>{artifact_id}</artifactId>
-    <version>{version}</version>
-</dependency>"""
-                dependencies.append(dependency.strip())
-            except ValueError:
-                dependencies.append(f"<!-- Invalid format: {library} -->")
-
-        # Объединяем зависимости в одну строку
-        pom_content = "\n".join(dependencies)
-
-        # Загружаем шаблон POM.xml
-        if not os.path.exists(TEMPLATE_POM_PATH):
-            return f"<p>Error: Template POM file not found at {TEMPLATE_POM_PATH}.</p>", 500
-
-        with open(TEMPLATE_POM_PATH, 'r') as template_file:
-            template_content = template_file.read()
-
-        # Заменяем маркер {insert} на зависимости
-        full_pom = template_content.replace('{insert}', pom_content)
-
-        return render_template('index.html', content=pom_content, full_pom=full_pom)
-    except Exception as e:
-        return f"<p>Error: {str(e)}</p>", 500
-
-@app.route('/save_pom', methods=['POST'])
-def save_pom():
-    # Получаем полный POM и путь от пользователя
-    full_pom = request.form.get('full_pom')
-    save_path = request.form.get('save_path')
-
-    if not full_pom or not save_path:
-        return "<p>Error: Missing Full POM content or save path.</p>", 400
-
-    try:
-        # Убедимся, что директория существует
-        os.makedirs(save_path, exist_ok=True)
-
-        # Сохраняем POM.xml в указанную директорию
-        pom_file_path = os.path.join(save_path, 'pom.xml')
-        with open(pom_file_path, 'w') as file:
-            file.write(full_pom.strip())
-
-        # Логируем информацию о генерации
-        log_entry = f"{datetime.now().isoformat()} | Saved to: {pom_file_path}\n"
-        with open(LOG_FILE_PATH, 'a') as log_file:
-            log_file.write(log_entry)
-
-        # Читаем последние 10 логов
-        logs = []
-        if os.path.exists(LOG_FILE_PATH):
-            with open(LOG_FILE_PATH, 'r') as log_file:
-                logs = log_file.readlines()[-10:]  # Берём последние 10 записей
-
-        return render_template('index.html', result=f"POM.xml saved successfully to {pom_file_path}.", logs=logs)
-    except Exception as e:
-        return f"<p>Error: {str(e)}</p>", 500
+@app.route('/download_sbom/<format>')
+def download_sbom(format):
+    sbom_path = os.path.join(SBOM_DIR, f"multi-lib-bom.{format}")
+    if os.path.exists(sbom_path):
+        return send_file(sbom_path, as_attachment=True)
+    return "SBOM file not found", 404
 
 if __name__ == '__main__':
     app.run(debug=True)
