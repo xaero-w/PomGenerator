@@ -1,0 +1,5 @@
+.idea/
+lib/__pycache__/
+config.py
+app.log
+sbom_files/
