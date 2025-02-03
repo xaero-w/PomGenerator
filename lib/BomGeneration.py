@@ -37,19 +37,17 @@ class BomGenerator:
         return pom_path
 
     def generate_sbom(self):
-        """Генерация SBOM с помощью Maven и CycloneDX плагина."""
+        """Генерация SBOM с помощью Maven и CycloneDX."""
         pom_path = os.path.join(self.save_path, f"{self.file_prefix}_bom.xml")
 
         if not os.path.exists(pom_path):
-            logger.error(f"Файл {pom_path} не найден! Maven не сможет работать без pom.xml.")
+            logger.error(f"Файл {pom_path} не найден! Maven не сможет работать.")
             return
 
-        logger.info(f"Запуск команды Maven для генерации SBOM в директории: {self.save_path}")
+        logger.info(f"Запуск Maven для генерации SBOM в {self.save_path}")
 
-        # Выполняем команду mvn для генерации SBOM
-        pom_path = os.path.join(self.save_path, f"{self.file_prefix}_bom.xml")
         os.system(f"mvn -f {pom_path} org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom")
 
-        # Перемещаем созданные файлы bom.json и bom.xml в нужную папку
-        bom_saver = BomSaver(self.file_prefix)
-        bom_saver.move_bom_files()
+        # Копируем файлы, а не перемещаем
+        bom_saver = BomSaver(self.file_prefix, self.save_path)
+        bom_saver.copy_bom_files()
