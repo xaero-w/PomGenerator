@@ -45,8 +45,8 @@ def index():
         bom_generator.generate_sbom()
 
         # Перемещаем файлы с помощью BomSaver
-        bom_saver = BomSaver(file_prefix)  # Создаем экземпляр BomSaver
-        bom_saver.move_bom_files()  # Перемещаем файлы bom.json и bom.xml
+        bom_saver = BomSaver(file_prefix, save_path)  # Создаем экземпляр BomSaver
+        bom_saver.copy_bom_files()  # Перемещаем файлы bom.json и bom.xml
 
         return render_template("index.html", success=True, pom_file=pom_file, sbom_dir=save_path)
 
