@@ -1,0 +1,1159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bom serialNumber="urn:uuid:c7b774c0-c4e4-3435-aef9-e053a9b3de3c" version="1" xmlns="http://cyclonedx.org/schema/bom/1.6">
+  <metadata>
+    <timestamp>2025-02-03T23:05:54Z</timestamp>
+    <lifecycles>
+      <lifecycle>
+        <phase>build</phase>
+      </lifecycle>
+    </lifecycles>
+    <tools>
+      <components>
+        <component type="library">
+          <author>OWASP Foundation</author>
+          <group>org.cyclonedx</group>
+          <name>cyclonedx-maven-plugin</name>
+          <version>2.9.1</version>
+          <description>CycloneDX Maven plugin</description>
+          <hashes>
+            <hash alg="MD5">9c7a565cf28cce58557d0c621c5ea4b1</hash>
+            <hash alg="SHA-1">be882d5a22050bfa9d19090b1420c188617d0e1c</hash>
+            <hash alg="SHA-256">698e0f37184a5b28c245c4065fd036dfce253b52f82fbb7113d81d36326cc249</hash>
+            <hash alg="SHA-512">c0f0b11026858166f872a2eb54719492e5cecaa0bc9cd6b30b3ecb4a174eed220f4a1b5829d18d6734128e778d3cb3db7ffed177c92866133129cb29081814a0</hash>
+            <hash alg="SHA-384">d80964707dfe5caca8c70521d5066f57589304c0a657e6fbc7c0614ea0fc7b3b3dbe7778361eee0f54ba111e9cb0ffcb</hash>
+          </hashes>
+        </component>
+      </components>
+    </tools>
+    <component type="library" bom-ref="pkg:maven/com.example/project@1.0-SNAPSHOT?type=jar">
+      <group>com.example</group>
+      <name>project</name>
+      <version>1.0-SNAPSHOT</version>
+      <purl>pkg:maven/com.example/project@1.0-SNAPSHOT?type=jar</purl>
+    </component>
+    <properties>
+      <property name="maven.goal">makeAggregateBom</property>
+      <property name="maven.scopes">compile,provided,runtime,system</property>
+    </properties>
+  </metadata>
+  <components>
+    <component type="library" bom-ref="pkg:maven/io.cucumber/cucumber-core@7.1.0?type=jar">
+      <group>io.cucumber</group>
+      <name>cucumber-core</name>
+      <version>7.1.0</version>
+      <description>Cucumber for the JVM</description>
+      <scope>required</scope>
+      <hashes>
+        <hash alg="MD5">1095b7bac080797410c529a0377e11b2</hash>
+        <hash alg="SHA-1">93513ba07eb1f47c4406f3281e40e5d6c36f908d</hash>
+        <hash alg="SHA-256">c3f95366ef580f0ebad3ed0bef91f1beacdb83d4f14bc78d70a962efd6506644</hash>
+        <hash alg="SHA-512">7729d8649ca98c74059096e6eabaa716922a16ec34677d6fe6b7e3108320ee373b32877e20c515d94343b810ad58984958816674dcbafd200e0649d2b986afd9</hash>
+        <hash alg="SHA-384">f387caa1072657a5e357e05435946770f786872ee4166623ec105825e90a08c3420fb6d08ce2fe3cc64d4924855e32c1</hash>
+      </hashes>
+      <licenses>
+        <license>
+          <id>MIT</id>
+          <url>https://opensource.org/license/mit/</url>
+        </license>
+      </licenses>
+      <purl>pkg:maven/io.cucumber/cucumber-core@7.1.0?type=jar</purl>
+      <externalReferences>
+        <reference type="website">
+          <url>http://cucumber.io/cucumber-core/</url>
+        </reference>
+        <reference type="distribution-intake">
+          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </reference>
+        <reference type="vcs">
+          <url>git://github.com/cucumber/cucumber-jvm.git/cucumber-core</url>
+        </reference>
+      </externalReferences>
+    </component>
+    <component type="library" bom-ref="pkg:maven/io.cucumber/messages@17.1.1?type=jar">
+      <group>io.cucumber</group>
+      <name>messages</name>
+      <version>17.1.1</version>
+      <description>JSON schema-based messages for Cucumber's inter-process communication</description>
+      <scope>required</scope>
+      <hashes>
+        <hash alg="MD5">f289a97db5aceaaad5c77684e58c2704</hash>
+        <hash alg="SHA-1">ab72f05cc30e3d62e9930080f2978143dda043cb</hash>
+        <hash alg="SHA-256">16ec31ae6fa9b48a411e95d8108fa256a364c19ddf0abe799cd3aaba8dee0533</hash>
+        <hash alg="SHA-512">5002a3a28ef3e4a1317071d8c5ae912ec2642aa22e6fdbafef59fb8fb3f734d54840a14fa9362f67640ae2cd961143e8b9ebcb62d5c98736cce3b0ff392f4b97</hash>
+        <hash alg="SHA-384">0ae9526e096dd242b8af5f971bebce40405f3170bc262807b78efc418eeb6a8663e1e320c9ec2a84723c13d84ccad1f5</hash>
+      </hashes>
+      <licenses>
+        <license>
+          <id>MIT</id>
+          <url>https://opensource.org/license/mit/</url>
+        </license>
+      </licenses>
+      <purl>pkg:maven/io.cucumber/messages@17.1.1?type=jar</purl>
+      <externalReferences>
+        <reference type="website">
+          <url>https://github.com/cucumber/cucumber-messages-java</url>
+        </reference>
+        <reference type="distribution-intake">
+          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </reference>
+        <reference type="vcs">
+          <url>git://github.com/cucumber/messages-java.git</url>
+        </reference>
+      </externalReferences>
+    </component>
+    <component type="library" bom-ref="pkg:maven/io.cucumber/tag-expressions@4.1.0?type=jar">
+      <group>io.cucumber</group>
+      <name>tag-expressions</name>
+      <version>4.1.0</version>
+      <description>Parses boolean infix expressions</description>
+      <scope>required</scope>
+      <hashes>
+        <hash alg="MD5">eb59cbf9e18e94f008eceb3bd2d33a46</hash>
+        <hash alg="SHA-1">68bc59a4cdbcdc9e8c5b288f660a16a9981a3c33</hash>
+        <hash alg="SHA-256">11f6196b20373afd088889d860985e25b04d2ece49621c61ef8f9fbc450fa6dc</hash>
+        <hash alg="SHA-512">6f33d6558526ea008dd09c38762bf62f93840fb8b25a614330195d4027960e422d09deaa60ad676854d77ba7c0657604678a7554b4763a0db1357c1e994db4f6</hash>
+        <hash alg="SHA-384">05940ebbe868eaff06d3597832af93a80e370676ea5ed0e4b1455c037112bb7034a31572ccd68c147a9e10dc9132d0b6</hash>
+      </hashes>
+      <licenses>
+        <license>
+          <id>MIT</id>
+          <url>https://opensource.org/license/mit/</url>
+        </license>
+      </licenses>
+      <purl>pkg:maven/io.cucumber/tag-expressions@4.1.0?type=jar</purl>
+      <externalReferences>
+        <reference type="website">
+          <url>https://github.com/cucumber/tag-expressions-java</url>
+        </reference>
+        <reference type="distribution-intake">
+          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </reference>
+        <reference type="vcs">
+          <url>git://github.com/cucumber/tag-expressions-java.git</url>
+        </reference>
+      </externalReferences>
+    </component>
+    <component type="library" bom-ref="pkg:maven/io.cucumber/cucumber-expressions@13.0.1?type=jar">
+      <group>io.cucumber</group>
+      <name>cucumber-expressions</name>
+      <version>13.0.1</version>
+      <description>Cucumber Expressions are simple patterns for matching Step Definitions with Gherkin steps</description>
+      <scope>required</scope>
+      <hashes>
+        <hash alg="MD5">d44345ed4cb5aeac68eec8a4032cc6b4</hash>
+        <hash alg="SHA-1">c555028da3c4733085640bd341699007ff162931</hash>
+        <hash alg="SHA-256">47e139fb23d35b515917dc5e27b94660773bf8094dcaa9caa4f0784b6069b2ac</hash>
+        <hash alg="SHA-512">a80f43960cf3a10856a69ff03da24ed4dd58f36a75c3eceed88aab3170daf0194a0bc7249a728c5bab50da3838754fc0a7412fae3aa151dfdefe9290b9b92443</hash>
+        <hash alg="SHA-384">b7e29c3ff1036298fa21d772ac3a1d770c97d87ca0d50eb75da15cf8398481ba970eda5aab120544d0c1b00041c32841</hash>
+      </hashes>
+      <licenses>
+        <license>
+          <id>MIT</id>
+          <url>https://opensource.org/license/mit/</url>
+        </license>
+      </licenses>
+      <purl>pkg:maven/io.cucumber/cucumber-expressions@13.0.1?type=jar</purl>
+      <externalReferences>
+        <reference type="website">
+          <url>https://github.com/cucumber/cucumber-expressions-java</url>
+        </reference>
+        <reference type="distribution-intake">
+          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </reference>
+        <reference type="vcs">
+          <url>git://github.com/cucumber/cucumber-expressions-java.git</url>
+        </reference>
+      </externalReferences>
+    </component>
+    <component type="library" bom-ref="pkg:maven/io.cucumber/html-formatter@17.0.0?type=jar">
+      <group>io.cucumber</group>
+      <name>html-formatter</name>
+      <version>17.0.0</version>
+      <description>Renders Cucumber Messages as HTML</description>
+      <scope>required</scope>
+      <hashes>
+        <hash alg="MD5">00f300592b971a133f0cf5b7bae11369</hash>
+        <hash alg="SHA-1">7b80ba4032870ab180525e735b6fadd28242fb09</hash>
+        <hash alg="SHA-256">10d1d1fcc94a67ce45ac906546422863dd71f0487526f9ac6be88ec5a52b72d3</hash>
+        <hash alg="SHA-512">76388d4002128c5e63ee4decd804ed7161300b18ce14735ff1fcdd9c259d24aaa58a99801be65fb185fad0e18da13c2fa2ef38564341350261768c808bd4148a</hash>
+        <hash alg="SHA-384">d9ec46f8e0ddab80c2a11e98e3a263347bae206cb2c793d3b7c36c3b81fe51de3012509c3c24ea589479c2bdb8baae29</hash>
+      </hashes>
+      <licenses>
+        <license>
+          <id>MIT</id>
+          <url>https://opensource.org/license/mit/</url>
+        </license>
+      </licenses>
+      <purl>pkg:maven/io.cucumber/html-formatter@17.0.0?type=jar</purl>
+      <externalReferences>
+        <reference type="website">
+          <url>https://github.com/cucumber/html-formatter-java</url>
+        </reference>
+        <reference type="distribution-intake">
+          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </reference>
+        <reference type="vcs">
+          <url>git://github.com/cucumber/html-formatter-java.git</url>
+        </reference>
+      </externalReferences>
+    </component>
+    <component type="library" bom-ref="pkg:maven/io.cucumber/create-meta@6.0.4?type=jar">
+      <group>io.cucumber</group>
+      <name>create-meta</name>
+      <version>6.0.4</version>
+      <description>Produce the meta message for Cucumber-JVM</description>
+      <scope>required</scope>
+      <hashes>
+        <hash alg="MD5">0c358998c649fdb2afb7f61c34d07157</hash>
+        <hash alg="SHA-1">c790d6bca40147401315e7684da996084047fbbb</hash>
+        <hash alg="SHA-256">104f4446fa373a634391c81e910a5323fd57ce611fe3c990ee0a68c866c2aa50</hash>
+        <hash alg="SHA-512">bc7bfc1b29f506491d522a2eed7276defd56c6fa507a1d7f0caf931bafee3905e5581562928cfdaf42b91fba2b3fabf36c43eb9def94a90b2bdee49f57f317eb</hash>
+        <hash alg="SHA-384">f9c010ee95e574e58c666a4b4da586da3db3b4334a0efdbb175b7dd93d17e8fcfc4c83c3f65635a092d397307a8f78b4</hash>
+      </hashes>
+      <licenses>
+        <license>
+          <id>MIT</id>
+          <url>https://opensource.org/license/mit/</url>
+        </license>
+      </licenses>
+      <purl>pkg:maven/io.cucumber/create-meta@6.0.4?type=jar</purl>
+      <externalReferences>
+        <reference type="website">
+          <url>https://github.com/cucumber/create-meta</url>
+        </reference>
+        <reference type="distribution-intake">
+          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </reference>
+        <reference type="vcs">
+          <url>git://github.com/cucumber/create-meta.git</url>
+        </reference>
+      </externalReferences>
+    </component>
+    <component type="library" bom-ref="pkg:maven/org.apiguardian/apiguardian-api@1.1.2?type=jar">
+      <group>org.apiguardian</group>
+      <name>apiguardian-api</name>
+      <version>1.1.2</version>
+      <description>@API Guardian</description>
+      <scope>required</scope>
+      <hashes>
+        <hash alg="MD5">8c7de3f82037fa4a2e8be2a2f13092af</hash>
+        <hash alg="SHA-1">a231e0d844d2721b0fa1b238006d15c6ded6842a</hash>
+        <hash alg="SHA-256">b509448ac506d607319f182537f0b35d71007582ec741832a1f111e5b5b70b38</hash>
+        <hash alg="SHA-512">d7ccd0e7019f1a997de39d66dc0ad4efe150428fdd7f4c743c93884f1602a3e90135ad34baea96d5b6d925ad6c0c8487c8e78304f0a089a12383d4a62e2c9a61</hash>
+        <hash alg="SHA-384">5ae11cfedcee7da43a506a67946ddc8a7a2622284a924ba78f74541e9a22db6868a15f5d84edb91a541e38afded734ea</hash>
+      </hashes>
+      <licenses>
+        <license>
+          <id>Apache-2.0</id>
+        </license>
+      </licenses>
+      <purl>pkg:maven/org.apiguardian/apiguardian-api@1.1.2?type=jar</purl>
+      <externalReferences>
+        <reference type="website">
+          <url>https://github.com/apiguardian-team/apiguardian</url>
+        </reference>
+        <reference type="vcs">
+          <url>https://github.com/apiguardian-team/apiguardian</url>
+        </reference>
+      </externalReferences>
+    </component>
+    <component type="library" bom-ref="pkg:maven/io.cucumber/cucumber-java@7.1.0?type=jar">
+      <group>io.cucumber</group>
+      <name>cucumber-java</name>
+      <version>7.1.0</version>
+      <description>Cucumber for the JVM</description>
+      <scope>required</scope>
+      <hashes>
+        <hash alg="MD5">e993cc7a9abf99fa24f6af9a76c4b298</hash>
+        <hash alg="SHA-1">ab75edc7d241f85e22c1fa2a1c9980c2baf03754</hash>
+        <hash alg="SHA-256">fb42bbbbd8389e7d9db9b8ce66603145c7c01742e785b5932e7e35470f7e4e0f</hash>
+        <hash alg="SHA-512">a22a9bc2ee14549c1c28c8d96a3e01c68ea2897dce49d3da9e5135d6139ad9cc02e997f46613a02f98216c0a6ebf8bd24a03ba238dbedbc3410bc3d3be7c3a2b</hash>
+        <hash alg="SHA-384">dc45b16fb06274924128bc04274a47111b575ab4244253bcd0e88fcb4a78d516e4a72a6500343cff378a02f86c318510</hash>
+      </hashes>
+      <licenses>
+        <license>
+          <id>MIT</id>
+          <url>https://opensource.org/license/mit/</url>
+        </license>
+      </licenses>
+      <purl>pkg:maven/io.cucumber/cucumber-java@7.1.0?type=jar</purl>
+      <externalReferences>
+        <reference type="website">
+          <url>http://cucumber.io/cucumber-java/</url>
+        </reference>
+        <reference type="distribution-intake">
+          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </reference>
+        <reference type="vcs">
+          <url>git://github.com/cucumber/cucumber-jvm.git/cucumber-java</url>
+        </reference>
+      </externalReferences>
+    </component>
+    <component type="library" bom-ref="pkg:maven/io.cucumber/cucumber-junit@7.1.0?type=jar">
+      <group>io.cucumber</group>
+      <name>cucumber-junit</name>
+      <version>7.1.0</version>
+      <description>Cucumber for the JVM</description>
+      <scope>required</scope>
+      <hashes>
+        <hash alg="MD5">40d99bfaf22580966140f4dd7d86cfef</hash>
+        <hash alg="SHA-1">381a4b38f847490e9a9ac0121d6bb8cd739e0724</hash>
+        <hash alg="SHA-256">98364ccc22cd73d63b4a39ee7bc3938158af80ff245c38dc939a06fda5c05d4e</hash>
+        <hash alg="SHA-512">04b32d08479092a4d7ee682a8fce0956f1dbff21d226c5a373041ac4518bc67f32e38c8f660a889f467485b23194eb599500a42a300802e700d389e643d39b52</hash>
+        <hash alg="SHA-384">4a4577174f48304448d386a547e2f7416f2240bb018912c30d600ce8e6ea375121fe5d001a856ed2e067661f2c2733b5</hash>
+      </hashes>
+      <licenses>
+        <license>
+          <id>MIT</id>
+          <url>https://opensource.org/license/mit/</url>
+        </license>
+      </licenses>
+      <purl>pkg:maven/io.cucumber/cucumber-junit@7.1.0?type=jar</purl>
+      <externalReferences>
+        <reference type="website">
+          <url>http://cucumber.io/cucumber-junit/</url>
+        </reference>
+        <reference type="distribution-intake">
+          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </reference>
+        <reference type="vcs">
+          <url>git://github.com/cucumber/cucumber-jvm.git/cucumber-junit</url>
+        </reference>
+      </externalReferences>
+    </component>
+    <component type="library" bom-ref="pkg:maven/junit/junit@4.13.2?type=jar">
+      <publisher>JUnit</publisher>
+      <group>junit</group>
+      <name>junit</name>
+      <version>4.13.2</version>
+      <description>JUnit is a unit testing framework for Java, created by Erich Gamma and Kent Beck.</description>
+      <scope>required</scope>
+      <hashes>
+        <hash alg="MD5">d98a9a02a99a9acd22d7653cbcc1f31f</hash>
+        <hash alg="SHA-1">8ac9e16d933b6fb43bc7f576336b8f4d7eb5ba12</hash>
+        <hash alg="SHA-256">8e495b634469d64fb8acfa3495a065cbacc8a0fff55ce1e31007be4c16dc57d3</hash>
+        <hash alg="SHA-512">a31b9950f929a7e5a600d89787ef40e42a8a8e2392e210d0c0f45b3572937670a18a524f1815508cd1152cd1eaa7275cb7430ba45c053be365c83c231bccd3f0</hash>
+        <hash alg="SHA-384">9f85c56a77c699eb87630b9e8224068a34c296bcd9aadb52248dd4665036f5bf1048fe75e5cb590b59e7855ca716acae</hash>
+      </hashes>
+      <licenses>
+        <license>
+          <id>EPL-1.0</id>
+          <url>http://www.eclipse.org/legal/epl-v10.html</url>
+        </license>
+      </licenses>
+      <purl>pkg:maven/junit/junit@4.13.2?type=jar</purl>
+      <externalReferences>
+        <reference type="website">
+          <url>http://junit.org</url>
+        </reference>
+        <reference type="build-system">
+          <url>https://github.com/junit-team/junit4/actions</url>
+        </reference>
+        <reference type="distribution">
+          <url>https://github.com/junit-team/junit4/wiki/Download-and-Install</url>
+        </reference>
+        <reference type="distribution-intake">
+          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </reference>
+        <reference type="issue-tracker">
+          <url>https://github.com/junit-team/junit4/issues</url>
+        </reference>
+        <reference type="vcs">
+          <url>https://github.com/junit-team/junit4</url>
+        </reference>
+      </externalReferences>
+    </component>
+    <component type="library" bom-ref="pkg:maven/org.hamcrest/hamcrest-core@1.3?type=jar">
+      <group>org.hamcrest</group>
+      <name>hamcrest-core</name>
+      <version>1.3</version>
+      <description>This is the core API of hamcrest matcher framework to be used by third-party framework providers. This includes the a foundation set of matcher implementations for common operations.</description>
+      <scope>required</scope>
+      <hashes>
+        <hash alg="MD5">6393363b47ddcbba82321110c3e07519</hash>
+        <hash alg="SHA-1">42a25dc3219429f0e5d060061f71acb49bf010a0</hash>
+        <hash alg="SHA-256">66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9</hash>
+        <hash alg="SHA-512">e237ae735aac4fa5a7253ec693191f42ef7ddce384c11d29fbf605981c0be077d086757409acad53cb5b9e53d86a07cc428d459ff0f5b00d32a8cbbca390be49</hash>
+        <hash alg="SHA-384">4b5297d2a12cc32b824153afc83f1ba9f1869ca288330f0a2f759659d09e4c420eb6ba4a1efbfa0657b625edd41293d5</hash>
+      </hashes>
+      <licenses>
+        <license>
+          <id>BSD-3-Clause</id>
+        </license>
+      </licenses>
+      <purl>pkg:maven/org.hamcrest/hamcrest-core@1.3?type=jar</purl>
+      <externalReferences>
+        <reference type="website">
+          <url>https://github.com/hamcrest/JavaHamcrest/hamcrest-core</url>
+        </reference>
+        <reference type="vcs">
+          <url>https://github.com/hamcrest/JavaHamcrest/hamcrest-core</url>
+        </reference>
+      </externalReferences>
+    </component>
+    <component type="library" bom-ref="pkg:maven/io.cucumber/cucumber-bom@7.1.0?type=jar">
+      <group>io.cucumber</group>
+      <name>cucumber-bom</name>
+      <version>7.1.0</version>
+      <description>Cucumber for the JVM</description>
+      <scope>required</scope>
+      <licenses>
+        <license>
+          <id>MIT</id>
+          <url>https://opensource.org/license/mit/</url>
+        </license>
+      </licenses>
+      <purl>pkg:maven/io.cucumber/cucumber-bom@7.1.0?type=jar</purl>
+      <externalReferences>
+        <reference type="website">
+          <url>http://cucumber.io/cucumber-bom/</url>
+        </reference>
+        <reference type="distribution-intake">
+          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </reference>
+        <reference type="vcs">
+          <url>git://github.com/cucumber/cucumber-jvm.git/cucumber-bom</url>
+        </reference>
+      </externalReferences>
+    </component>
+    <component type="library" bom-ref="pkg:maven/io.cucumber/cucumber-gherkin-messages@7.1.0?type=jar">
+      <group>io.cucumber</group>
+      <name>cucumber-gherkin-messages</name>
+      <version>7.1.0</version>
+      <description>Cucumber for the JVM</description>
+      <scope>required</scope>
+      <hashes>
+        <hash alg="MD5">7eadd724b871d7698b01381a4d6e5d30</hash>
+        <hash alg="SHA-1">65dfe5354128b5f8c317bd3f63daef8c9a84bf64</hash>
+        <hash alg="SHA-256">d6e6a0b347fd61fd51f589dba74b9ee807577fecf096e0e191d172c7ef82a3f3</hash>
+        <hash alg="SHA-512">c3dfb9428df309923b2ad69104a136888a8128488f88c5d1e576058e97e34e3c4b9ca3f226224d5573362a7d766eccf45d3f02fbe193759bcc6714e744add00b</hash>
+        <hash alg="SHA-384">239b37ab585701a96a9d234c2c4df4f1d49b33b6f9bec11b63a2c03974bc16c03c2cce826bdca6b9a97d2e3c4b21231d</hash>
+      </hashes>
+      <licenses>
+        <license>
+          <id>MIT</id>
+          <url>https://opensource.org/license/mit/</url>
+        </license>
+      </licenses>
+      <purl>pkg:maven/io.cucumber/cucumber-gherkin-messages@7.1.0?type=jar</purl>
+      <externalReferences>
+        <reference type="website">
+          <url>http://cucumber.io/cucumber-gherkin-messages/</url>
+        </reference>
+        <reference type="distribution-intake">
+          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </reference>
+        <reference type="vcs">
+          <url>git://github.com/cucumber/cucumber-jvm.git/cucumber-gherkin-messages</url>
+        </reference>
+      </externalReferences>
+    </component>
+    <component type="library" bom-ref="pkg:maven/io.cucumber/cucumber-gherkin@7.1.0?type=jar">
+      <group>io.cucumber</group>
+      <name>cucumber-gherkin</name>
+      <version>7.1.0</version>
+      <description>Cucumber for the JVM</description>
+      <scope>required</scope>
+      <hashes>
+        <hash alg="MD5">1092ce5668de9bf5bec23c078ca7298a</hash>
+        <hash alg="SHA-1">12a582ecb20042e5a03833e992ffa0b50ee67b14</hash>
+        <hash alg="SHA-256">49c264160173c1e6e12e0ca820c86b67496d823f5761b84954c8669e9652c035</hash>
+        <hash alg="SHA-512">0c2df1ea7cd919ed3ea73cf7a189c68c93ef163a9453f03b0379821273bc981210c14a8b46c170052f0be0f7c65d5434ac28da4e4dbb192d290f4bd33e2939cf</hash>
+        <hash alg="SHA-384">25a143f5ca5814c23d36601c5149f8dc944cf6f99d54ff07584791a5ea706cd76fd3219c952553e924adf2a89308413e</hash>
+      </hashes>
+      <licenses>
+        <license>
+          <id>MIT</id>
+          <url>https://opensource.org/license/mit/</url>
+        </license>
+      </licenses>
+      <purl>pkg:maven/io.cucumber/cucumber-gherkin@7.1.0?type=jar</purl>
+      <externalReferences>
+        <reference type="website">
+          <url>http://cucumber.io/cucumber-gherkin/</url>
+        </reference>
+        <reference type="distribution-intake">
+          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </reference>
+        <reference type="vcs">
+          <url>git://github.com/cucumber/cucumber-jvm.git/cucumber-gherkin</url>
+        </reference>
+      </externalReferences>
+    </component>
+    <component type="library" bom-ref="pkg:maven/io.cucumber/cucumber-jvm@7.1.0?type=jar">
+      <group>io.cucumber</group>
+      <name>cucumber-jvm</name>
+      <version>7.1.0</version>
+      <description>Cucumber for the JVM</description>
+      <scope>required</scope>
+      <licenses>
+        <license>
+          <id>MIT</id>
+          <url>https://opensource.org/license/mit/</url>
+        </license>
+      </licenses>
+      <purl>pkg:maven/io.cucumber/cucumber-jvm@7.1.0?type=jar</purl>
+      <externalReferences>
+        <reference type="website">
+          <url>http://cucumber.io/</url>
+        </reference>
+        <reference type="distribution-intake">
+          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </reference>
+        <reference type="vcs">
+          <url>git://github.com/cucumber/cucumber-jvm.git</url>
+        </reference>
+      </externalReferences>
+    </component>
+    <component type="library" bom-ref="pkg:maven/io.cucumber/cucumber-plugin@7.1.0?type=jar">
+      <group>io.cucumber</group>
+      <name>cucumber-plugin</name>
+      <version>7.1.0</version>
+      <description>Plugin interface for Cucumber-JVM</description>
+      <scope>required</scope>
+      <hashes>
+        <hash alg="MD5">e3ec44277c5141d34c8f271e064e7d2a</hash>
+        <hash alg="SHA-1">36c37e80a4905606d0e0106580575c9d09493d40</hash>
+        <hash alg="SHA-256">0d89e53c6ac923dd5704fee8c9fd0ccb08f3ae1e8d56d0d05daa35a982a07aa5</hash>
+        <hash alg="SHA-512">947c6dedc95a49e9264b9d3a671bb502771caebfa9f85a0a6d38d4cbe071f3442361b5ab3fb8c88e384086e47f922816c09e06bab21946fadca90c89854882d6</hash>
+        <hash alg="SHA-384">8e70703f856846109d9184d567d99a785a546cb3effaaba433e945ab8bbd18b4c6fe48be8a64e6a1260296d408f53537</hash>
+      </hashes>
+      <licenses>
+        <license>
+          <id>MIT</id>
+          <url>https://opensource.org/license/mit/</url>
+        </license>
+      </licenses>
+      <purl>pkg:maven/io.cucumber/cucumber-plugin@7.1.0?type=jar</purl>
+      <externalReferences>
+        <reference type="website">
+          <url>http://cucumber.io/cucumber-plugin/</url>
+        </reference>
+        <reference type="distribution-intake">
+          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </reference>
+        <reference type="vcs">
+          <url>git://github.com/cucumber/cucumber-jvm.git/cucumber-plugin</url>
+        </reference>
+      </externalReferences>
+    </component>
+    <component type="library" bom-ref="pkg:maven/io.cucumber/datatable@7.1.0?type=jar">
+      <group>io.cucumber</group>
+      <name>datatable</name>
+      <version>7.1.0</version>
+      <description>Cucumber for the JVM</description>
+      <scope>required</scope>
+      <hashes>
+        <hash alg="MD5">fafe0dca8c69499bed4a7224a7068caf</hash>
+        <hash alg="SHA-1">4113c723184f8af41327cc580d318efb752f1ad1</hash>
+        <hash alg="SHA-256">ed1d1293fa6605ad6401c6f31e2b679ea36e44eaaf4156c11d5d1e6251b75481</hash>
+        <hash alg="SHA-512">041506873c64a02504aeb2839b6b4de376b9375953092095b5f9d4f79a64a390f1bcca447582e251b61ee9df68f2c69eed4e2691fe3905c89dfcf103b808cc59</hash>
+        <hash alg="SHA-384">a61c592ba016974fedd40efed85fdbc44d04ca6e09e8249e7d219918a83ef741c78dca0ac33aaa470448bc652fff8498</hash>
+      </hashes>
+      <licenses>
+        <license>
+          <id>MIT</id>
+          <url>https://opensource.org/license/mit/</url>
+        </license>
+      </licenses>
+      <purl>pkg:maven/io.cucumber/datatable@7.1.0?type=jar</purl>
+      <externalReferences>
+        <reference type="website">
+          <url>http://cucumber.io/datatable/</url>
+        </reference>
+        <reference type="distribution-intake">
+          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </reference>
+        <reference type="vcs">
+          <url>git://github.com/cucumber/cucumber-jvm.git/datatable</url>
+        </reference>
+      </externalReferences>
+    </component>
+    <component type="library" bom-ref="pkg:maven/io.cucumber/docstring@7.1.0?type=jar">
+      <group>io.cucumber</group>
+      <name>docstring</name>
+      <version>7.1.0</version>
+      <description>Cucumber for the JVM</description>
+      <scope>required</scope>
+      <hashes>
+        <hash alg="MD5">bd57a716ef25db37694a398d8170352c</hash>
+        <hash alg="SHA-1">7790f52e0757d9b08ff5a62a6033b7bdd7391a5f</hash>
+        <hash alg="SHA-256">8ffe3cbca0f2111885cdfa60a4ed01f6abe52abf0b857a842e770b5313a37d30</hash>
+        <hash alg="SHA-512">c3d98bed772483e1e9a45052f1139640f58718e5088645e84b98d1b344a51ee06bc7b7c2d0125fbc8b995b704b6ae105e34fe5d7c75869978de4e41f1c113a71</hash>
+        <hash alg="SHA-384">34b230ddbd6ee53acf677d39c5c678c79e483fe75199ec43523088f82d3de76b95a84ded91bf2cc948091d978783f13c</hash>
+      </hashes>
+      <licenses>
+        <license>
+          <id>MIT</id>
+          <url>https://opensource.org/license/mit/</url>
+        </license>
+      </licenses>
+      <purl>pkg:maven/io.cucumber/docstring@7.1.0?type=jar</purl>
+      <externalReferences>
+        <reference type="website">
+          <url>http://cucumber.io/docstring/</url>
+        </reference>
+        <reference type="distribution-intake">
+          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </reference>
+        <reference type="vcs">
+          <url>git://github.com/cucumber/cucumber-jvm.git/docstring</url>
+        </reference>
+      </externalReferences>
+    </component>
+    <component type="library" bom-ref="pkg:maven/io.cucumber/cucumber-junit-platform-engine@7.1.0?type=jar">
+      <group>io.cucumber</group>
+      <name>cucumber-junit-platform-engine</name>
+      <version>7.1.0</version>
+      <description>Cucumber for the JVM</description>
+      <scope>required</scope>
+      <hashes>
+        <hash alg="MD5">f228fe28c09e1622a69e7e5c3b81a4d1</hash>
+        <hash alg="SHA-1">242420da832cdd741470d3917b997ed738e24c1a</hash>
+        <hash alg="SHA-256">401408db6d00e0edaa87c0687a01da7a208ae053655b2700dfc44fb65776e50a</hash>
+        <hash alg="SHA-512">d9660d1b69bf97cbd2179b23bcf021d4b40a682406634c7b223018fde80e8a08f8f796fc8148fab56327fa6a6350413d770f937b3e9249808d03a335ef40a87f</hash>
+        <hash alg="SHA-384">16148a2b7a3dffb9b64a4adfaab07f3768d917ab98947b34da4691a6081ba5be2470b40027abd14269e9a8ae5a716d10</hash>
+      </hashes>
+      <licenses>
+        <license>
+          <id>MIT</id>
+          <url>https://opensource.org/license/mit/</url>
+        </license>
+      </licenses>
+      <purl>pkg:maven/io.cucumber/cucumber-junit-platform-engine@7.1.0?type=jar</purl>
+      <externalReferences>
+        <reference type="website">
+          <url>http://cucumber.io/cucumber-junit-platform-engine/</url>
+        </reference>
+        <reference type="distribution-intake">
+          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </reference>
+        <reference type="vcs">
+          <url>git://github.com/cucumber/cucumber-jvm.git/cucumber-junit-platform-engine</url>
+        </reference>
+      </externalReferences>
+    </component>
+    <component type="library" bom-ref="pkg:maven/org.junit.platform/junit-platform-engine@1.8.2?type=jar">
+      <group>org.junit.platform</group>
+      <name>junit-platform-engine</name>
+      <version>1.8.2</version>
+      <description>Module "junit-platform-engine" of JUnit 5.</description>
+      <scope>required</scope>
+      <hashes>
+        <hash alg="MD5">a6d209076d8a9fe4029c638cf05e6030</hash>
+        <hash alg="SHA-1">b737de09f19864bd136805c84df7999a142fec29</hash>
+        <hash alg="SHA-256">0b7d000f8c3e8e5f7d6b819649936e7b9938314e87c8f983805218ea57567e59</hash>
+        <hash alg="SHA-512">be82009a1958fc442a789f0515d43fd5e8fcd3767a48b04093a5fb6421d9de06d88c90849b9ad91471eb150b0496c32a69ecfd12dd0c26a891622060a78ed2b8</hash>
+        <hash alg="SHA-384">f91b0be2e15f1710055c959a47c789cccee3733d24e01655a958d80f8e21222f93977220dd8a1b8337142f91ed829d2e</hash>
+      </hashes>
+      <licenses>
+        <license>
+          <id>EPL-2.0</id>
+        </license>
+      </licenses>
+      <purl>pkg:maven/org.junit.platform/junit-platform-engine@1.8.2?type=jar</purl>
+      <externalReferences>
+        <reference type="website">
+          <url>https://junit.org/junit5/</url>
+        </reference>
+        <reference type="vcs">
+          <url>https://github.com/junit-team/junit5</url>
+        </reference>
+      </externalReferences>
+    </component>
+    <component type="library" bom-ref="pkg:maven/org.opentest4j/opentest4j@1.2.0?type=jar">
+      <group>org.opentest4j</group>
+      <name>opentest4j</name>
+      <version>1.2.0</version>
+      <description>Open Test Alliance for the JVM</description>
+      <scope>required</scope>
+      <hashes>
+        <hash alg="MD5">45c9a837c21f68e8c93e85b121e2fb90</hash>
+        <hash alg="SHA-1">28c11eb91f9b6d8e200631d46e20a7f407f2a046</hash>
+        <hash alg="SHA-256">58812de60898d976fb81ef3b62da05c6604c18fd4a249f5044282479fc286af2</hash>
+        <hash alg="SHA-512">17f77797a260eb2bd1666a90e25efc79a5413afa9df1c1cb6c4cd1949d61c38b241e3bb20956396b5f54d144720303d72a2ac00bc5bf245a260a3c3099e01c74</hash>
+        <hash alg="SHA-384">ef25f5dd948c9ab7256e896da994871c1645b22a8d2d83f1e9ff7c6562b62acb70fcf0bb976a9580fb955a8e8b9c43dd</hash>
+      </hashes>
+      <licenses>
+        <license>
+          <id>Apache-2.0</id>
+        </license>
+      </licenses>
+      <purl>pkg:maven/org.opentest4j/opentest4j@1.2.0?type=jar</purl>
+      <externalReferences>
+        <reference type="website">
+          <url>https://github.com/ota4j-team/opentest4j</url>
+        </reference>
+        <reference type="vcs">
+          <url>https://github.com/ota4j-team/opentest4j</url>
+        </reference>
+      </externalReferences>
+    </component>
+    <component type="library" bom-ref="pkg:maven/org.junit.platform/junit-platform-commons@1.8.2?type=jar">
+      <group>org.junit.platform</group>
+      <name>junit-platform-commons</name>
+      <version>1.8.2</version>
+      <description>Module "junit-platform-commons" of JUnit 5.</description>
+      <scope>required</scope>
+      <hashes>
+        <hash alg="MD5">72693a20944048031e0a55f67413ca1b</hash>
+        <hash alg="SHA-1">32c8b8617c1342376fd5af2053da6410d8866861</hash>
+        <hash alg="SHA-256">d2e015fca7130e79af2f4608dc54415e4b10b592d77333decb4b1a274c185050</hash>
+        <hash alg="SHA-512">9ff90e05f39933342dcf8440336b32ac803a7348f86b63dab938083759cce56e22e290d056d4596f035a4dff629a4d159bf146ca7c32d0e89df2e0f0af7f1a9e</hash>
+        <hash alg="SHA-384">078f3e45d43772c385a7b290bf26de0433875fa21ce98611299f34e5c09e02486146fec1601fa7b19dd5c884a47e4148</hash>
+      </hashes>
+      <licenses>
+        <license>
+          <id>EPL-2.0</id>
+        </license>
+      </licenses>
+      <purl>pkg:maven/org.junit.platform/junit-platform-commons@1.8.2?type=jar</purl>
+      <externalReferences>
+        <reference type="website">
+          <url>https://junit.org/junit5/</url>
+        </reference>
+        <reference type="vcs">
+          <url>https://github.com/junit-team/junit5</url>
+        </reference>
+      </externalReferences>
+    </component>
+    <component type="library" bom-ref="pkg:maven/io.cucumber/cucumber-guice@7.1.0?type=jar">
+      <group>io.cucumber</group>
+      <name>cucumber-guice</name>
+      <version>7.1.0</version>
+      <description>Cucumber for the JVM</description>
+      <scope>required</scope>
+      <hashes>
+        <hash alg="MD5">0f6048bbfcb17065949c8294f41b5647</hash>
+        <hash alg="SHA-1">f2c3193b9830a8e17d53b00f484d731f0ff15a8d</hash>
+        <hash alg="SHA-256">8cd628148ffd55019150116c05626bea83c3d6ab78ab57c3e339bc3951bea524</hash>
+        <hash alg="SHA-512">df1f5339dda1cba32d95d3b63890b917389e764bc3b6b902d6cf0882126ce92a7ac89a73a91f7a9869d49fbf986eb168f27b5cc4dcca7772efb2db33012253b4</hash>
+        <hash alg="SHA-384">8426b0a410842bbbaf864ccdf754a4b27ef53c1e1b8502efb47b423a252c7552a7e48c80b7aeb329e3b97f217f268a8f</hash>
+      </hashes>
+      <licenses>
+        <license>
+          <id>MIT</id>
+          <url>https://opensource.org/license/mit/</url>
+        </license>
+      </licenses>
+      <purl>pkg:maven/io.cucumber/cucumber-guice@7.1.0?type=jar</purl>
+      <externalReferences>
+        <reference type="website">
+          <url>http://cucumber.io/cucumber-guice/</url>
+        </reference>
+        <reference type="distribution-intake">
+          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </reference>
+        <reference type="vcs">
+          <url>git://github.com/cucumber/cucumber-jvm.git/cucumber-guice</url>
+        </reference>
+      </externalReferences>
+    </component>
+    <component type="library" bom-ref="pkg:maven/io.cucumber/cucumber-picocontainer@7.1.0?type=jar">
+      <group>io.cucumber</group>
+      <name>cucumber-picocontainer</name>
+      <version>7.1.0</version>
+      <description>Cucumber for the JVM</description>
+      <scope>required</scope>
+      <hashes>
+        <hash alg="MD5">a3581070ee2ffa1fee032c2f7b18a407</hash>
+        <hash alg="SHA-1">de68b0f4e5e2c0aa2b1f0526092f14e9cb4ee6cc</hash>
+        <hash alg="SHA-256">296b8d16b8afe10b0b2436853ace6a845ffdf9df5cf0072a81a247fe3e56e6d0</hash>
+        <hash alg="SHA-512">4301eaceb0b11773c6656f485b044ecf03743c2368a5df4598b4adb22da514306e6d1bb13ec041623be75562a03affba1b0f990777f9cb0924a66d8dfa2f45d3</hash>
+        <hash alg="SHA-384">79571d7eb2c2499fee2f8fbcfe55bd829e9cefbd6806695c98dd4a85e4fb8a8f0c6debf4fb4e20ccace9423dab2154fa</hash>
+      </hashes>
+      <licenses>
+        <license>
+          <id>MIT</id>
+          <url>https://opensource.org/license/mit/</url>
+        </license>
+      </licenses>
+      <purl>pkg:maven/io.cucumber/cucumber-picocontainer@7.1.0?type=jar</purl>
+      <externalReferences>
+        <reference type="website">
+          <url>http://cucumber.io/cucumber-picocontainer/</url>
+        </reference>
+        <reference type="distribution-intake">
+          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </reference>
+        <reference type="vcs">
+          <url>git://github.com/cucumber/cucumber-jvm.git/cucumber-picocontainer</url>
+        </reference>
+      </externalReferences>
+    </component>
+    <component type="library" bom-ref="pkg:maven/org.picocontainer/picocontainer@2.15?type=jar">
+      <publisher>Codehaus</publisher>
+      <group>org.picocontainer</group>
+      <name>picocontainer</name>
+      <version>2.15</version>
+      <description>A small Java embeddable Dependency Injection container</description>
+      <scope>required</scope>
+      <hashes>
+        <hash alg="MD5">462404f92bdbd710aa2abf6fc1168247</hash>
+        <hash alg="SHA-1">1b05ebc330fb947f74fe98469f64f99e6bdd9892</hash>
+        <hash alg="SHA-256">b7d85de14e544d627bffe20438a3071500fba191004f894a944b92489f7f0ddc</hash>
+        <hash alg="SHA-512">e8fd942b1a0a05c15409bddbfbd6d419801bfdeab38ca8e28353ddf89b862e9aef31c7b3e2750340b678e56e74a6555fb7d3db232dc9a8d5f94dc348561f412d</hash>
+        <hash alg="SHA-384">5795216db808e1feb581d896a29a788c0812a8468f6d07b02d6704535597f9d967bb131ef8e5285e92277712912a802d</hash>
+      </hashes>
+      <licenses>
+        <license>
+          <id>BSD-4-Clause</id>
+        </license>
+      </licenses>
+      <purl>pkg:maven/org.picocontainer/picocontainer@2.15?type=jar</purl>
+      <externalReferences>
+        <reference type="website">
+          <url>http://www.picocontainer.org/picocontainer</url>
+        </reference>
+        <reference type="distribution-intake">
+          <url>https://nexus.codehaus.org/service/local/staging/deploy/maven2/</url>
+        </reference>
+        <reference type="issue-tracker">
+          <url>http://jira.codehaus.org/browse/PICO</url>
+        </reference>
+        <reference type="vcs">
+          <url>http://svn.codehaus.org/picocontainer/java/2.x/tags/picocontainer-2.15/picocontainer</url>
+        </reference>
+      </externalReferences>
+    </component>
+    <component type="library" bom-ref="pkg:maven/io.cucumber/cucumber-spring@7.1.0?type=jar">
+      <group>io.cucumber</group>
+      <name>cucumber-spring</name>
+      <version>7.1.0</version>
+      <description>Cucumber for the JVM</description>
+      <scope>required</scope>
+      <hashes>
+        <hash alg="MD5">7ccc96cc7b69e3dc0390f77b652d80b2</hash>
+        <hash alg="SHA-1">645dd2d3cf46d1e6816d8fdd5e6cf1a1eba49cb8</hash>
+        <hash alg="SHA-256">86c37723d611ac6aaccd921b6fc9e16343dac2dbad921f592fb8236025dfb859</hash>
+        <hash alg="SHA-512">1c8b5239cb6d53f5b08f4b913c1948bb10039bc7a7b015a3d29ab1d5a03c382d5eca6282a90721f350f11ec721ed18977773ea29baaafc42603c985957d5e339</hash>
+        <hash alg="SHA-384">631792fb1ad2346f783b85c67006fa5ce3ff15d3e04753d45c3bdcf0c8c09c8e7c570adef6a17381208ef82a33bdb809</hash>
+      </hashes>
+      <licenses>
+        <license>
+          <id>MIT</id>
+          <url>https://opensource.org/license/mit/</url>
+        </license>
+      </licenses>
+      <purl>pkg:maven/io.cucumber/cucumber-spring@7.1.0?type=jar</purl>
+      <externalReferences>
+        <reference type="website">
+          <url>http://cucumber.io/cucumber-spring/</url>
+        </reference>
+        <reference type="distribution-intake">
+          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </reference>
+        <reference type="vcs">
+          <url>git://github.com/cucumber/cucumber-jvm.git/cucumber-spring</url>
+        </reference>
+      </externalReferences>
+    </component>
+    <component type="library" bom-ref="pkg:maven/io.cucumber/cucumber-testng@7.1.0?type=jar">
+      <group>io.cucumber</group>
+      <name>cucumber-testng</name>
+      <version>7.1.0</version>
+      <description>Cucumber for the JVM</description>
+      <scope>required</scope>
+      <hashes>
+        <hash alg="MD5">b22a834e8885101d8e1aa481d5a9b6ba</hash>
+        <hash alg="SHA-1">20e2e4b16d5d745b7171b82c085a29a28d50feb5</hash>
+        <hash alg="SHA-256">8f41e7dbf1a31caa386bf3d60c2aac5a46240ef964a7a0b37e36c28275feddf8</hash>
+        <hash alg="SHA-512">da6a373b26e55dc3f06d401bb5ae637fb58bc74d272e6e5021f59a5d17f8936572e89b7ad64d08cc71d01dc76cc5060fed6c914aaaf0c793edd23831ce642ab9</hash>
+        <hash alg="SHA-384">720463f34a8eaa11710f1bfc245db2392d724e8cbf34fe65cd0ef4f77f05b2e89ee27aeac991e54670aae898ac002a0a</hash>
+      </hashes>
+      <licenses>
+        <license>
+          <id>MIT</id>
+          <url>https://opensource.org/license/mit/</url>
+        </license>
+      </licenses>
+      <purl>pkg:maven/io.cucumber/cucumber-testng@7.1.0?type=jar</purl>
+      <externalReferences>
+        <reference type="website">
+          <url>http://cucumber.io/cucumber-testng/</url>
+        </reference>
+        <reference type="distribution-intake">
+          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </reference>
+        <reference type="vcs">
+          <url>git://github.com/cucumber/cucumber-jvm.git/cucumber-testng</url>
+        </reference>
+      </externalReferences>
+    </component>
+    <component type="library" bom-ref="pkg:maven/org.testng/testng@7.4.0?type=jar">
+      <group>org.testng</group>
+      <name>testng</name>
+      <version>7.4.0</version>
+      <description>Testing framework for Java</description>
+      <scope>required</scope>
+      <hashes>
+        <hash alg="MD5">7d287494ec24f1b1b51bf274ec17ed6d</hash>
+        <hash alg="SHA-1">b6becc0a058e272473ac3ba983966ff507ca0300</hash>
+        <hash alg="SHA-256">f28e9e881f5dcf2d197c447778369e3b2dc1a09742402577e87da58df21b86c0</hash>
+        <hash alg="SHA-512">4a0239524b0d5dbcd957d01a465d1958529a1cfe5e37d1bfecacb7d855a0251be762316ef98987de49c16292ef92a33bead603132bacf575fb886e6a740e093c</hash>
+        <hash alg="SHA-384">2e1ac60d043082a0a4e5c63eda018c0e951a53b53a5bc5ca39a78cb1a6bcb3d8de184d7b14a9744a34cdf751e79de2ff</hash>
+      </hashes>
+      <licenses>
+        <license>
+          <id>Apache-2.0</id>
+        </license>
+      </licenses>
+      <purl>pkg:maven/org.testng/testng@7.4.0?type=jar</purl>
+      <externalReferences>
+        <reference type="website">
+          <url>https://testng.org</url>
+        </reference>
+        <reference type="issue-tracker">
+          <url>https://github.com/cbeust/testng/issues</url>
+        </reference>
+        <reference type="vcs">
+          <url>https://github.com/cbeust/testng</url>
+        </reference>
+      </externalReferences>
+    </component>
+    <component type="library" bom-ref="pkg:maven/com.beust/jcommander@1.78?type=jar">
+      <group>com.beust</group>
+      <name>jcommander</name>
+      <version>1.78</version>
+      <description>Command line parser library for Java</description>
+      <scope>required</scope>
+      <hashes>
+        <hash alg="MD5">50552e69ce8115d80b9a31ec93c87bc3</hash>
+        <hash alg="SHA-1">a3927de9bd6f351429bcf763712c9890629d8f51</hash>
+        <hash alg="SHA-256">7891debb84b5f83e9bd57593ebece3399abbe0fd938cf306b3534c57913b9615</hash>
+        <hash alg="SHA-512">5ee2ef4c12888a48d7c830189d06ee8a653c7664a53c9b6fa935d4e7866b0454111f8092d7ece086ec80c61edab2856187a1e247873e5c8e4724efb02c37504b</hash>
+        <hash alg="SHA-384">cfd68158d572057bb9114e066e44c5bfba57e549b90c547686fe97454c3c35a244f65e59384dc956396b65246cd193ae</hash>
+      </hashes>
+      <licenses>
+        <license>
+          <id>Apache-2.0</id>
+        </license>
+      </licenses>
+      <purl>pkg:maven/com.beust/jcommander@1.78?type=jar</purl>
+      <externalReferences>
+        <reference type="website">
+          <url>https://jcommander.org</url>
+        </reference>
+        <reference type="issue-tracker">
+          <url>https://github.com/cbeust/jcommander/issues</url>
+        </reference>
+        <reference type="vcs">
+          <url>http://example.com/my-library/</url>
+        </reference>
+      </externalReferences>
+    </component>
+    <component type="library" bom-ref="pkg:maven/org.webjars/jquery@3.5.1?type=jar">
+      <group>org.webjars</group>
+      <name>jquery</name>
+      <version>3.5.1</version>
+      <description>WebJar for jQuery</description>
+      <scope>required</scope>
+      <hashes>
+        <hash alg="MD5">4873982991d54d745f0d94a1daab7694</hash>
+        <hash alg="SHA-1">2392938e374f561c27c53872bdc9b6b351b6ba34</hash>
+        <hash alg="SHA-256">83168112220ac912a3dba0eebae90a4da5bf1e24b1bafd401e3d4f9f598bb2cb</hash>
+        <hash alg="SHA-512">9f560415b36875958ff1d3c6d37fa79d6d134c5f5fc7719dd21db36d1f24dec39787834b2a9ffb104ec6b56e725ccc524a8ff9b189ced3d68e24296b2daae720</hash>
+        <hash alg="SHA-384">522c18d09a188c8bc6f9981afcc3bb89e350d7c86bb34227d3373b4c9802bfe8d0bd63970111a9760cb4cf692edb40da</hash>
+      </hashes>
+      <licenses>
+        <license>
+          <id>MIT</id>
+          <url>https://opensource.org/license/mit/</url>
+        </license>
+      </licenses>
+      <purl>pkg:maven/org.webjars/jquery@3.5.1?type=jar</purl>
+      <externalReferences>
+        <reference type="website">
+          <url>http://webjars.org</url>
+        </reference>
+        <reference type="distribution-intake">
+          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </reference>
+        <reference type="vcs">
+          <url>http://github.com/webjars/jquery</url>
+        </reference>
+      </externalReferences>
+    </component>
+    <component type="library" bom-ref="pkg:maven/io.cucumber/datatable-matchers@7.1.0?type=jar">
+      <group>io.cucumber</group>
+      <name>datatable-matchers</name>
+      <version>7.1.0</version>
+      <description>Cucumber for the JVM</description>
+      <scope>required</scope>
+      <hashes>
+        <hash alg="MD5">1bac383bd0bbff2ca03cfbd50a37f958</hash>
+        <hash alg="SHA-1">caa2aac0a10ab9208a7a027831c0d5e32079ccd2</hash>
+        <hash alg="SHA-256">2115bdb402b033fb523cfdddb15b3a3d05e376d040baec1aeab73ada1796bba8</hash>
+        <hash alg="SHA-512">d779229b71f44222184ebddb7986027da9048e17c2785715ee37cbe8dee3538b2493628a640c928c07eb089d3306bd6a968b1744b2c7c42e7ac7560615d61d54</hash>
+        <hash alg="SHA-384">d745b7aa27f664609a5cf86a406856116e9e1dc1e49fabdaafb1e01728e6172479da409ab1c7d015e3d810e5fdc3811e</hash>
+      </hashes>
+      <licenses>
+        <license>
+          <id>MIT</id>
+          <url>https://opensource.org/license/mit/</url>
+        </license>
+      </licenses>
+      <purl>pkg:maven/io.cucumber/datatable-matchers@7.1.0?type=jar</purl>
+      <externalReferences>
+        <reference type="website">
+          <url>http://cucumber.io/datatable-matchers/</url>
+        </reference>
+        <reference type="distribution-intake">
+          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </reference>
+        <reference type="vcs">
+          <url>git://github.com/cucumber/cucumber-jvm.git/datatable-matchers</url>
+        </reference>
+      </externalReferences>
+    </component>
+    <component type="library" bom-ref="pkg:maven/org.hamcrest/hamcrest@2.2?type=jar">
+      <group>org.hamcrest</group>
+      <name>hamcrest</name>
+      <version>2.2</version>
+      <description>Core API and libraries of hamcrest matcher framework.</description>
+      <scope>required</scope>
+      <hashes>
+        <hash alg="MD5">10b47e837f271d0662f28780e60388e8</hash>
+        <hash alg="SHA-1">1820c0968dba3a11a1b30669bb1f01978a91dedc</hash>
+        <hash alg="SHA-256">5e62846a89f05cd78cd9c1a553f340d002458380c320455dd1f8fc5497a8a1c1</hash>
+        <hash alg="SHA-512">6b1141329b83224f69f074cb913dbff6921d6b8693ede8d2599acb626481255dae63de42eb123cbd5f59a261ac32faae012be64e8e90406ae9215543fbca5546</hash>
+        <hash alg="SHA-384">89bdcfdb28da13eaa09a40f5e3fd5667c3cf789cf43e237b8581d1cd814fee392ada66a79cbe77295950e996f485f887</hash>
+      </hashes>
+      <licenses>
+        <license>
+          <id>BSD-3-Clause</id>
+          <url>https://opensource.org/licenses/BSD-3-Clause</url>
+        </license>
+      </licenses>
+      <purl>pkg:maven/org.hamcrest/hamcrest@2.2?type=jar</purl>
+      <externalReferences>
+        <reference type="website">
+          <url>http://hamcrest.org/JavaHamcrest/</url>
+        </reference>
+        <reference type="vcs">
+          <url>https://github.com/hamcrest/JavaHamcrest</url>
+        </reference>
+      </externalReferences>
+    </component>
+  </components>
+  <dependencies>
+    <dependency ref="pkg:maven/com.example/project@1.0-SNAPSHOT?type=jar">
+      <dependency ref="pkg:maven/io.cucumber/messages@17.1.1?type=jar"/>
+      <dependency ref="pkg:maven/io.cucumber/cucumber-core@7.1.0?type=jar"/>
+      <dependency ref="pkg:maven/io.cucumber/cucumber-java@7.1.0?type=jar"/>
+      <dependency ref="pkg:maven/io.cucumber/cucumber-junit@7.1.0?type=jar"/>
+      <dependency ref="pkg:maven/io.cucumber/cucumber-bom@7.1.0?type=jar"/>
+      <dependency ref="pkg:maven/io.cucumber/cucumber-gherkin-messages@7.1.0?type=jar"/>
+      <dependency ref="pkg:maven/io.cucumber/cucumber-gherkin@7.1.0?type=jar"/>
+      <dependency ref="pkg:maven/io.cucumber/cucumber-jvm@7.1.0?type=jar"/>
+      <dependency ref="pkg:maven/io.cucumber/cucumber-plugin@7.1.0?type=jar"/>
+      <dependency ref="pkg:maven/io.cucumber/datatable@7.1.0?type=jar"/>
+      <dependency ref="pkg:maven/io.cucumber/docstring@7.1.0?type=jar"/>
+      <dependency ref="pkg:maven/io.cucumber/cucumber-junit-platform-engine@7.1.0?type=jar"/>
+      <dependency ref="pkg:maven/io.cucumber/cucumber-guice@7.1.0?type=jar"/>
+      <dependency ref="pkg:maven/io.cucumber/cucumber-picocontainer@7.1.0?type=jar"/>
+      <dependency ref="pkg:maven/io.cucumber/cucumber-spring@7.1.0?type=jar"/>
+      <dependency ref="pkg:maven/io.cucumber/cucumber-testng@7.1.0?type=jar"/>
+      <dependency ref="pkg:maven/io.cucumber/datatable-matchers@7.1.0?type=jar"/>
+    </dependency>
+    <dependency ref="pkg:maven/io.cucumber/messages@17.1.1?type=jar"/>
+    <dependency ref="pkg:maven/io.cucumber/cucumber-core@7.1.0?type=jar">
+      <dependency ref="pkg:maven/io.cucumber/cucumber-gherkin@7.1.0?type=jar"/>
+      <dependency ref="pkg:maven/io.cucumber/cucumber-gherkin-messages@7.1.0?type=jar"/>
+      <dependency ref="pkg:maven/io.cucumber/messages@17.1.1?type=jar"/>
+      <dependency ref="pkg:maven/io.cucumber/tag-expressions@4.1.0?type=jar"/>
+      <dependency ref="pkg:maven/io.cucumber/cucumber-expressions@13.0.1?type=jar"/>
+      <dependency ref="pkg:maven/io.cucumber/datatable@7.1.0?type=jar"/>
+      <dependency ref="pkg:maven/io.cucumber/cucumber-plugin@7.1.0?type=jar"/>
+      <dependency ref="pkg:maven/io.cucumber/docstring@7.1.0?type=jar"/>
+      <dependency ref="pkg:maven/io.cucumber/html-formatter@17.0.0?type=jar"/>
+      <dependency ref="pkg:maven/io.cucumber/create-meta@6.0.4?type=jar"/>
+      <dependency ref="pkg:maven/org.apiguardian/apiguardian-api@1.1.2?type=jar"/>
+    </dependency>
+    <dependency ref="pkg:maven/io.cucumber/cucumber-gherkin@7.1.0?type=jar">
+      <dependency ref="pkg:maven/io.cucumber/cucumber-plugin@7.1.0?type=jar"/>
+    </dependency>
+    <dependency ref="pkg:maven/io.cucumber/cucumber-plugin@7.1.0?type=jar">
+      <dependency ref="pkg:maven/org.apiguardian/apiguardian-api@1.1.2?type=jar"/>
+    </dependency>
+    <dependency ref="pkg:maven/org.apiguardian/apiguardian-api@1.1.2?type=jar"/>
+    <dependency ref="pkg:maven/io.cucumber/cucumber-gherkin-messages@7.1.0?type=jar">
+      <dependency ref="pkg:maven/io.cucumber/cucumber-gherkin@7.1.0?type=jar"/>
+    </dependency>
+    <dependency ref="pkg:maven/io.cucumber/tag-expressions@4.1.0?type=jar"/>
+    <dependency ref="pkg:maven/io.cucumber/cucumber-expressions@13.0.1?type=jar">
+      <dependency ref="pkg:maven/org.apiguardian/apiguardian-api@1.1.2?type=jar"/>
+    </dependency>
+    <dependency ref="pkg:maven/io.cucumber/datatable@7.1.0?type=jar">
+      <dependency ref="pkg:maven/org.apiguardian/apiguardian-api@1.1.2?type=jar"/>
+    </dependency>
+    <dependency ref="pkg:maven/io.cucumber/docstring@7.1.0?type=jar">
+      <dependency ref="pkg:maven/org.apiguardian/apiguardian-api@1.1.2?type=jar"/>
+    </dependency>
+    <dependency ref="pkg:maven/io.cucumber/html-formatter@17.0.0?type=jar">
+      <dependency ref="pkg:maven/io.cucumber/messages@17.1.1?type=jar"/>
+    </dependency>
+    <dependency ref="pkg:maven/io.cucumber/create-meta@6.0.4?type=jar">
+      <dependency ref="pkg:maven/io.cucumber/messages@17.1.1?type=jar"/>
+    </dependency>
+    <dependency ref="pkg:maven/io.cucumber/cucumber-java@7.1.0?type=jar">
+      <dependency ref="pkg:maven/io.cucumber/cucumber-core@7.1.0?type=jar"/>
+      <dependency ref="pkg:maven/org.apiguardian/apiguardian-api@1.1.2?type=jar"/>
+    </dependency>
+    <dependency ref="pkg:maven/io.cucumber/cucumber-junit@7.1.0?type=jar">
+      <dependency ref="pkg:maven/org.apiguardian/apiguardian-api@1.1.2?type=jar"/>
+      <dependency ref="pkg:maven/io.cucumber/cucumber-core@7.1.0?type=jar"/>
+      <dependency ref="pkg:maven/junit/junit@4.13.2?type=jar"/>
+    </dependency>
+    <dependency ref="pkg:maven/junit/junit@4.13.2?type=jar">
+      <dependency ref="pkg:maven/org.hamcrest/hamcrest-core@1.3?type=jar"/>
+    </dependency>
+    <dependency ref="pkg:maven/org.hamcrest/hamcrest-core@1.3?type=jar"/>
+    <dependency ref="pkg:maven/io.cucumber/cucumber-bom@7.1.0?type=jar"/>
+    <dependency ref="pkg:maven/io.cucumber/cucumber-jvm@7.1.0?type=jar"/>
+    <dependency ref="pkg:maven/io.cucumber/cucumber-junit-platform-engine@7.1.0?type=jar">
+      <dependency ref="pkg:maven/io.cucumber/cucumber-core@7.1.0?type=jar"/>
+      <dependency ref="pkg:maven/org.junit.platform/junit-platform-engine@1.8.2?type=jar"/>
+    </dependency>
+    <dependency ref="pkg:maven/org.junit.platform/junit-platform-engine@1.8.2?type=jar">
+      <dependency ref="pkg:maven/org.opentest4j/opentest4j@1.2.0?type=jar"/>
+      <dependency ref="pkg:maven/org.junit.platform/junit-platform-commons@1.8.2?type=jar"/>
+      <dependency ref="pkg:maven/org.apiguardian/apiguardian-api@1.1.2?type=jar"/>
+    </dependency>
+    <dependency ref="pkg:maven/org.opentest4j/opentest4j@1.2.0?type=jar"/>
+    <dependency ref="pkg:maven/org.junit.platform/junit-platform-commons@1.8.2?type=jar">
+      <dependency ref="pkg:maven/org.apiguardian/apiguardian-api@1.1.2?type=jar"/>
+    </dependency>
+    <dependency ref="pkg:maven/io.cucumber/cucumber-guice@7.1.0?type=jar">
+      <dependency ref="pkg:maven/io.cucumber/cucumber-core@7.1.0?type=jar"/>
+      <dependency ref="pkg:maven/org.apiguardian/apiguardian-api@1.1.2?type=jar"/>
+    </dependency>
+    <dependency ref="pkg:maven/io.cucumber/cucumber-picocontainer@7.1.0?type=jar">
+      <dependency ref="pkg:maven/io.cucumber/cucumber-core@7.1.0?type=jar"/>
+      <dependency ref="pkg:maven/org.apiguardian/apiguardian-api@1.1.2?type=jar"/>
+      <dependency ref="pkg:maven/org.picocontainer/picocontainer@2.15?type=jar"/>
+    </dependency>
+    <dependency ref="pkg:maven/org.picocontainer/picocontainer@2.15?type=jar"/>
+    <dependency ref="pkg:maven/io.cucumber/cucumber-spring@7.1.0?type=jar">
+      <dependency ref="pkg:maven/io.cucumber/cucumber-core@7.1.0?type=jar"/>
+      <dependency ref="pkg:maven/org.apiguardian/apiguardian-api@1.1.2?type=jar"/>
+    </dependency>
+    <dependency ref="pkg:maven/io.cucumber/cucumber-testng@7.1.0?type=jar">
+      <dependency ref="pkg:maven/org.apiguardian/apiguardian-api@1.1.2?type=jar"/>
+      <dependency ref="pkg:maven/io.cucumber/cucumber-core@7.1.0?type=jar"/>
+      <dependency ref="pkg:maven/org.testng/testng@7.4.0?type=jar"/>
+    </dependency>
+    <dependency ref="pkg:maven/org.testng/testng@7.4.0?type=jar">
+      <dependency ref="pkg:maven/com.beust/jcommander@1.78?type=jar"/>
+      <dependency ref="pkg:maven/org.webjars/jquery@3.5.1?type=jar"/>
+    </dependency>
+    <dependency ref="pkg:maven/com.beust/jcommander@1.78?type=jar"/>
+    <dependency ref="pkg:maven/org.webjars/jquery@3.5.1?type=jar"/>
+    <dependency ref="pkg:maven/io.cucumber/datatable-matchers@7.1.0?type=jar">
+      <dependency ref="pkg:maven/org.apiguardian/apiguardian-api@1.1.2?type=jar"/>
+      <dependency ref="pkg:maven/io.cucumber/datatable@7.1.0?type=jar"/>
+      <dependency ref="pkg:maven/org.hamcrest/hamcrest@2.2?type=jar"/>
+    </dependency>
+    <dependency ref="pkg:maven/org.hamcrest/hamcrest@2.2?type=jar"/>
+  </dependencies>
+</bom>

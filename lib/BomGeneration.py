@@ -48,6 +48,6 @@ class BomGenerator:
 
         os.system(f"mvn -f {pom_path} org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom")
 
-        # Копируем файлы, а не перемещаем
+        # Копируем файлы, включая POM
         bom_saver = BomSaver(self.file_prefix, self.save_path)
         bom_saver.copy_bom_files()
