@@ -1,0 +1,45 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.example</groupId>
+    <artifactId>project</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <dependencies>
+        {% for library in libraries %}
+        <dependency>
+            <groupId>{{ library['g'] }}</groupId>
+            <artifactId>{{ library['a'] }}</artifactId>
+            <version>{{ library['v'] }}</version>
+            {% if library.get('description') %}
+            <description>{{ library['description'] }}</description>
+            {% endif %}
+            {% if library.get('scope') %}
+            <scope>{{ library['scope'] }}</scope>
+            {% endif %}
+            {% if library.get('type') %}
+            <type>{{ library['type'] }}</type>
+            {% endif %}
+            {% if library.get('classifier') %}
+            <classifier>{{ library['classifier'] }}</classifier>
+            {% endif %}
+        </dependency>
+        {% endfor %}
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.cyclonedx</groupId>
+                <artifactId>cyclonedx-maven-plugin</artifactId>
+                <version>2.9.1</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>makeAggregateBom</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

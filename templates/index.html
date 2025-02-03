@@ -1,27 +1,34 @@
-<form method="post">
-    <textarea name="query" rows="5" cols="50">{{ query or '' }}</textarea>
-    <br>
-    <label for="custom_path">Save SBOM to (path):</label>
-    <input type="text" name="custom_path" value="sbom_custom">
-    <br>
-    <button type="submit">Search</button>
-</form>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SBOM Generator</title>
+</head>
+<body>
+    <h1>Генератор SBOM</h1>
 
-<hr>
-
-{% if results %}
-    <h2>Results:</h2>
-    <ul>
-    {% for result in results %}
-        <li>
-            <strong>{{ result.artifactId }}</strong> ({{ result.version }}) -
-            <a href="{{ result.url }}" target="_blank">View on Maven Central</a>
-        </li>
-    {% endfor %}
-    </ul>
-    {% if sbom_json_url and sbom_xml_url %}
-        <h3>Download SBOM:</h3>
-        <a href="{{ sbom_json_url }}">Download JSON</a> |
-        <a href="{{ sbom_xml_url }}">Download XML</a>
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
     {% endif %}
-{% endif %}
+
+    {% if success %}
+        <p style="color: green;">SBOM успешно сгенерирован!</p>
+        <p>Pom файл сохранен по пути: <a href="{{ pom_file }}">{{ pom_file }}</a></p>
+        <p>SBOM файлы находятся в каталоге: {{ sbom_dir }}</p>
+    {% endif %}
+
+    <form action="/" method="POST">
+        <label for="libraries">Введите библиотеки (формат: artifactId/version):</label><br>
+        <textarea id="libraries" name="libraries" rows="10" cols="50"></textarea><br><br>
+
+        <label for="save_path">Укажите путь для сохранения SBOM файлов:</label><br>
+        <input type="text" id="save_path" name="save_path" size="50"><br><br>
+
+        <label for="file_prefix">Укажите префикс для файлов (например, _name):</label><br>
+        <input type="text" id="file_prefix" name="file_prefix" size="50"><br><br>
+
+        <input type="submit" value="Сгенерировать SBOM">
+    </form>
+</body>
+</html>
