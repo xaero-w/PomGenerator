@@ -18,9 +18,10 @@
         <p>SBOM файлы находятся в каталоге: {{ sbom_dir }}</p>
     {% endif %}
 
+    <!-- Первая форма: Ввод зависимостей -->
+    <h2>Введите библиотеки (формат: artifactId/version):</h2>
     <form action="/" method="POST">
-        <label for="libraries">Введите библиотеки (формат: artifactId/version):</label><br>
-        <textarea id="libraries" name="libraries" rows="10" cols="50"></textarea><br><br>
+        <textarea id="libraries" name="libraries" rows="10" cols="50" placeholder="Пример: cucumber-core/7.1.0"></textarea><br><br>
 
         <label for="save_path">Укажите путь для сохранения SBOM файлов:</label><br>
         <input type="text" id="save_path" name="save_path" size="50"><br><br>
@@ -28,7 +29,47 @@
         <label for="file_prefix">Укажите префикс для файлов (например, _name):</label><br>
         <input type="text" id="file_prefix" name="file_prefix" size="50"><br><br>
 
-        <input type="submit" value="Сгенерировать SBOM">
+        <input type="submit" value="Поиск зависимостей">
     </form>
+
+    {% if libraries %}
+        <!-- Вторая форма: Отображение найденных зависимостей -->
+        <h2>Найденные зависимости:</h2>
+        <form action="/generate_pom" method="POST">
+            <div>
+                {% for library in libraries %}
+                    <div>
+                        <pre>
+                            <dependency>
+                                <groupId>{{ library.g }}</groupId>
+                                <artifactId>{{ library.a }}</artifactId>
+                                <version>{{ library.v }}</version>
+                                {% if library.scope %}
+                                    <scope>{{ library.scope }}</scope>
+                                {% endif %}
+                                {% if library.type %}
+                                    <type>{{ library.type }}</type>
+                                {% endif %}
+                                {% if library.classifier %}
+                                    <classifier>{{ library.classifier }}</classifier>
+                                {% endif %}
+                            </dependency>
+                        </pre>
+                    </div>
+                {% endfor %}
+            </div>
+            <br><br>
+            <input type="submit" value="Сгенерировать pom.xml">
+        </form>
+    {% endif %}
+
+    {% if pom_xml %}
+        <!-- Третья форма: Генерация pom.xml и запуск SBOM -->
+        <h2>Генерация pom.xml:</h2>
+        <form action="/generate_sbom" method="POST">
+            <textarea id="pom_file" name="pom_file" rows="10" cols="50">{{ pom_xml }}</textarea><br><br>
+            <input type="submit" value="Запустить генерацию SBOM">
+        </form>
+    {% endif %}
 </body>
 </html>

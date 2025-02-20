@@ -1,9 +1,7 @@
 import requests
 import logging
-import time
-from config import MAVEN_CENTRAL_URL  # Импортируем переменную из config.py
+from config import MAVEN_CENTRAL_URL
 
-# Настройка логирования
 logger = logging.getLogger()
 
 class MavenSearcher:
@@ -11,10 +9,6 @@ class MavenSearcher:
         pass
 
     def find_maven_package(self, artifact_id, version):
-        """
-        Выполняет поиск библиотеки в Maven Central по artifact_id и version.
-        Возвращает информацию о библиотеке (groupId, artifactId, version) или None, если не найдено.
-        """
         params = {
             'q': f'a:"{artifact_id}" AND v:"{version}"',
             'rows': 1,
@@ -24,15 +18,30 @@ class MavenSearcher:
         logger.info(f"Отправка запроса в Maven: {MAVEN_CENTRAL_URL}, параметры: {params}")
 
         try:
-            response = requests.get(MAVEN_CENTRAL_URL, params=params)  # Используем переменную из config.py
+            response = requests.get(MAVEN_CENTRAL_URL, params=params)
             response.raise_for_status()
             data = response.json()
-
-            # Логируем весь ответ от Maven
             logger.info(f"Ответ от Maven: {data}")
 
             if data["response"]["numFound"] > 0:
-                return data["response"]["docs"][0]  # Возвращаем первый найденный результат
+                doc = data["response"]["docs"][0]
+
+                # Формируем данные только из того, что действительно есть в API
+                dependency_xml = "<dependency>\n"
+
+                if 'g' in doc:
+                    dependency_xml += f"    <groupId>{doc['g']}</groupId>\n"
+                if 'a' in doc:
+                    dependency_xml += f"    <artifactId>{doc['a']}</artifactId>\n"
+                if 'v' in doc:
+                    dependency_xml += f"    <version>{doc['v']}</version>\n"
+                if 'p' in doc:  # packaging
+                    dependency_xml += f"    <type>{doc['p']}</type>\n"
+
+                dependency_xml += "</dependency>"
+
+                return dependency_xml.strip()
+
             else:
                 logger.warning(f"Не найдено библиотек для запроса: {params}")
                 return None
@@ -40,7 +49,3 @@ class MavenSearcher:
         except requests.exceptions.RequestException as e:
             logger.error(f"Ошибка при запросе в Maven Central: {e}")
             return None
-
-        finally:
-            # Добавление паузы в 0.1 секунды после запроса (чтобы избежать блокировки)
-            time.sleep(0.1)

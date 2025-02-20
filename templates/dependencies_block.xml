@@ -1,0 +1,20 @@
+<!-- dependencies_block.xml -->
+{% for library in libraries %}
+<dependency>
+    <groupId>{{ library['g'] }}</groupId>
+    <artifactId>{{ library['a'] }}</artifactId>
+    <version>{{ library['v'] }}</version>
+    {% if library.get('description') %}
+    <description>{{ library['description'] }}</description>
+    {% endif %}
+    {% if library.get('scope') %}
+    <scope>{{ library['scope'] }}</scope>
+    {% endif %}
+    {% if library.get('type') and library['type'] != '' %}
+    <type>{{ library['type'] }}</type>
+    {% endif %}
+    {% if library.get('classifier') %}
+    <classifier>{{ library['classifier'] }}</classifier>
+    {% endif %}
+</dependency>
+{% endfor %}
