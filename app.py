@@ -1,8 +1,11 @@
+from lib.BomSaver import BomSaver
+from lib.DependencyTrackManager import DependencyTrackManager
 from flask import Flask, render_template, request
-from lib.mavenSearch import MavenSearcher  # Правильный импорт для поиска в Maven
-from lib.BomGeneration import BomGenerator  # Генерация SBOM
-from lib.BomSaver import BomSaver  # Перемещение файлов bom.json и bom.xml
-
+import re
+from lib.PomGenerator import PomGenerator
+from lib.MavenSearch2 import MavenSearcher
+from lib.SbomGenerator import SbomGenerator
+from lib.filedataloader import FileDataLoader
 import logging
 
 # Настройка логирования
@@ -14,43 +17,59 @@ app = Flask(__name__)
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
-        # Получение данных из формы
-        libraries = request.form["libraries"].splitlines()
-        save_path = request.form["save_path"]
+        # 1. Получаем данные из формы
+        # libraries_input = request.form["libraries"].splitlines()
+        libraries_input = re.split(r'[\n\r,;]+', request.form["libraries"])
         file_prefix = request.form["file_prefix"]
+        save_path = request.form["save_path"]  # Путь из формы
 
-        if not save_path:
-            return render_template("index.html", error="Путь для сохранения файлов не указан")
-
-        # Поиск библиотек в Maven Central
         maven_searcher = MavenSearcher()
-        found_libraries = []
-        for library in libraries:
-            artifact_id, version = library.split('/')
-            result = maven_searcher.find_maven_package(artifact_id, version)
-            if result:
-                found_libraries.append(result)
+        dependencies_block = "<dependencies>\n"
 
-        if not found_libraries:
+        # 2. Поиск библиотек и формирование блока зависимостей
+        for library in libraries_input:
+            if '/' in library:
+                artifact_id, version = library.split('/')
+                dependency_xml = maven_searcher.find_maven_package(artifact_id.strip(), version.strip())
+                if dependency_xml:
+                    dependencies_block += dependency_xml + "\n"
+
+        dependencies_block += "</dependencies>"
+
+        if dependencies_block == "<dependencies>\n</dependencies>":
             return render_template("index.html", error="Не удалось найти библиотеки")
 
-        # Создание pom.xml и сохранение
-        bom_generator = BomGenerator(file_prefix)
-        pom_file = bom_generator.create_pom_file(found_libraries)
+        # 3. Генерация pom.xml
+        pom_generator = PomGenerator()
+        pom_file_path = pom_generator.create_pom_file(dependencies_block)
 
-        if not pom_file:
-            return render_template("index.html", error="Не удалось создать pom.xml")
+        # 4. Генерация SBOM
+        sbom_generator = SbomGenerator(pom_file_path)
+        sbom_generator.generate_sbom()
 
-        # Генерация SBOM
-        bom_generator.generate_sbom()
+        # ✅ Исправленный путь к SBOM-файлу (он находится в `target/`)
+        sbom_file_path = pom_file_path.replace("pom.xml", "target/bom.xml")
 
-        # Перемещаем файлы с помощью BomSaver
-        bom_saver = BomSaver(file_prefix, save_path)  # Создаем экземпляр BomSaver
-        bom_saver.copy_bom_files()  # Перемещаем файлы bom.json и bom.xml
+        # 5. Копирование SBOM файлов и pom.xml
+        bom_saver = BomSaver(file_prefix, save_path, pom_file_path)
+        bom_saver.copy_sbom_files()
 
-        return render_template("index.html", success=True, pom_file=pom_file, sbom_dir=save_path)
+        # 6. Создание проекта в Dependency Track и загрузка SBOM
+        logger.info(f"🔄 Создаем проект в Dependency Track: {file_prefix}")
+        dt_manager = DependencyTrackManager(file_prefix, pom_file_path)
+
+        if dt_manager.create_project():
+            logger.info("✅ Проект успешно создан, загружаем SBOM...")
+            if dt_manager.upload_sbom():
+                logger.info("✅ SBOM успешно загружен в Dependency Track.")
+            else:
+                logger.error("❌ Ошибка загрузки SBOM.")
+        else:
+            logger.error("❌ Ошибка создания проекта в Dependency Track.")
+
+        return render_template("index.html", pom_file=pom_file_path, success=True, sbom_dir=save_path)
 
     return render_template("index.html")
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0", port=5000)

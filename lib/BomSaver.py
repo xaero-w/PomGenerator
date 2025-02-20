@@ -2,43 +2,40 @@ import os
 import shutil
 import logging
 
-# Настройка логирования
 logger = logging.getLogger()
 
 class BomSaver:
-    def __init__(self, file_prefix, save_path):
-        self.file_prefix = file_prefix
-        self.save_path = save_path  # Используем путь из формы
+    def __init__(self, prefix, save_path, pom_file_path):
+        self.prefix = prefix
+        self.save_path = save_path  # Путь из формы
+        self.pom_file_path = pom_file_path  # Путь к pom.xml
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        self.source_dir = os.path.join(base_dir, '..', 'pom_project', 'target')
 
-    def copy_bom_files(self):
-        """Копирование файлов bom.json, bom.xml и pom.xml в указанный каталог."""
-        bom_json_path = os.path.join(self.save_path, f"{self.file_prefix}_bom.json")
-        bom_xml_path = os.path.join(self.save_path, f"{self.file_prefix}_bom.xml")
-        pom_xml_path = os.path.join(self.save_path, f"{self.file_prefix}_pom.xml")  # Новый путь для pom.xml
-
-        target_bom_json = os.path.join(os.getcwd(), "target", "bom.json")
-        target_bom_xml = os.path.join(os.getcwd(), "target", "bom.xml")
-        target_pom_xml = os.path.join(os.getcwd(), f"{self.file_prefix}_bom.xml")  # pom.xml создается в текущей папке
-
-        # Проверяем, существует ли директория, если нет — создаем
         if not os.path.exists(self.save_path):
             os.makedirs(self.save_path)
+            logger.info(f"Создана директория для копирования файлов: {self.save_path}")
 
-        if os.path.exists(target_bom_json):
-            shutil.copy(target_bom_json, bom_json_path)
-            logger.info(f"Файл bom.json скопирован в {bom_json_path}")
-        else:
-            logger.warning(f"Файл bom.json не найден в {target_bom_json}")
+    def copy_sbom_files(self):
+        """
+        Копирование SBOM файлов (bom.xml, bom.json, pom.xml) + dependencies.txt в указанный каталог.
+        """
+        files_to_copy = ['bom.xml', 'bom.json', 'dependencies.txt']  # Добавили dependencies.txt
 
-        if os.path.exists(target_bom_xml):
-            shutil.copy(target_bom_xml, bom_xml_path)
-            logger.info(f"Файл bom.xml скопирован в {bom_xml_path}")
-        else:
-            logger.warning(f"Файл bom.xml не найден в {target_bom_xml}")
+        # Копируем SBOM файлы + dependencies.txt
+        for file_name in files_to_copy:
+            source_file = os.path.join(self.source_dir, file_name)
+            if os.path.exists(source_file):
+                destination_file = os.path.join(self.save_path, f"{self.prefix}_{file_name}")
+                shutil.copy2(source_file, destination_file)
+                logger.info(f"Файл {file_name} скопирован как {destination_file}")
+            else:
+                logger.warning(f"Файл {file_name} не найден в {self.source_dir}")
 
-        # Копируем pom.xml из текущей директории (где он создается)
-        if os.path.exists(target_pom_xml):
-            shutil.copy(target_pom_xml, pom_xml_path)
-            logger.info(f"Файл pom.xml скопирован в {pom_xml_path}")
+        # Копируем pom.xml с префиксом
+        if os.path.exists(self.pom_file_path):
+            pom_destination = os.path.join(self.save_path, f"{self.prefix}_pom.xml")
+            shutil.copy2(self.pom_file_path, pom_destination)
+            logger.info(f"Файл pom.xml скопирован как {pom_destination}")
         else:
-            logger.warning(f"Файл pom.xml не найден в {target_pom_xml}")
+            logger.warning(f"Файл pom.xml не найден по пути {self.pom_file_path}")

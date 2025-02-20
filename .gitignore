@@ -3,3 +3,7 @@ lib/__pycache__/
 config.py
 app.log
 sbom_files/
+test.py
+/target
+/pom_project
+/venv
