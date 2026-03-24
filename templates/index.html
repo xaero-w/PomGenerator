@@ -2,74 +2,76 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SBOM Generator</title>
+    <title>POM / SBOM Generator</title>
+    <style>
+        .error { color: red; }
+        .hint { font-size: 0.9em; color: #555; }
+    </style>
 </head>
 <body>
-    <h1>Генератор SBOM</h1>
 
-    {% if error %}
-        <p style="color: red;">{{ error }}</p>
-    {% endif %}
+<h1>Генерация POM и SBOM</h1>
 
-    {% if success %}
-        <p style="color: green;">SBOM успешно сгенерирован!</p>
-        <p>Pom файл сохранен по пути: <a href="{{ pom_file }}">{{ pom_file }}</a></p>
-        <p>SBOM файлы находятся в каталоге: {{ sbom_dir }}</p>
-    {% endif %}
+{% if error %}
+    <div class="error">
+        <strong>Ошибка:</strong> {{ error }}
+    </div>
+{% endif %}
 
-    <!-- Первая форма: Ввод зависимостей -->
-    <h2>Введите библиотеки (формат: artifactId/version):</h2>
-    <form action="/" method="POST">
-        <textarea id="libraries" name="libraries" rows="10" cols="50" placeholder="Пример: cucumber-core/7.1.0"></textarea><br><br>
+<form method="post" novalidate>
 
-        <label for="save_path">Укажите путь для сохранения SBOM файлов:</label><br>
-        <input type="text" id="save_path" name="save_path" size="50"><br><br>
+    <label for="libraries">
+        Библиотеки (формат: artifactId/version):
+    </label><br>
 
-        <label for="file_prefix">Укажите префикс для файлов (например, _name):</label><br>
-        <input type="text" id="file_prefix" name="file_prefix" size="50"><br><br>
+    <textarea
+        id="libraries"
+        name="libraries"
+        rows="6"
+        cols="60"
+        required
+        pattern="^[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+([,\s]+[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+)*$"
+        title="Каждая библиотека должна быть в формате artifactId/version"
+    >{{ request.form.libraries or '' }}</textarea>
 
-        <input type="submit" value="Поиск зависимостей">
-    </form>
+    <div class="hint">
+        Пример:<br>
+        log4j/1.2.17 spring-core/5.3.30
+    </div>
 
-    {% if libraries %}
-        <!-- Вторая форма: Отображение найденных зависимостей -->
-        <h2>Найденные зависимости:</h2>
-        <form action="/generate_pom" method="POST">
-            <div>
-                {% for library in libraries %}
-                    <div>
-                        <pre>
-                            <dependency>
-                                <groupId>{{ library.g }}</groupId>
-                                <artifactId>{{ library.a }}</artifactId>
-                                <version>{{ library.v }}</version>
-                                {% if library.scope %}
-                                    <scope>{{ library.scope }}</scope>
-                                {% endif %}
-                                {% if library.type %}
-                                    <type>{{ library.type }}</type>
-                                {% endif %}
-                                {% if library.classifier %}
-                                    <classifier>{{ library.classifier }}</classifier>
-                                {% endif %}
-                            </dependency>
-                        </pre>
-                    </div>
-                {% endfor %}
-            </div>
-            <br><br>
-            <input type="submit" value="Сгенерировать pom.xml">
-        </form>
-    {% endif %}
+    <br><br>
 
-    {% if pom_xml %}
-        <!-- Третья форма: Генерация pom.xml и запуск SBOM -->
-        <h2>Генерация pom.xml:</h2>
-        <form action="/generate_sbom" method="POST">
-            <textarea id="pom_file" name="pom_file" rows="10" cols="50">{{ pom_xml }}</textarea><br><br>
-            <input type="submit" value="Запустить генерацию SBOM">
-        </form>
-    {% endif %}
+    <label for="save_path">
+        Путь для сохранения результатов:
+    </label><br>
+
+    <input
+        type="text"
+        id="save_path"
+        name="save_path"
+        size="60"
+        required
+        value="{{ request.form.save_path or '' }}"
+        title="Укажите абсолютный путь"
+    >
+
+    <br><br>
+
+    <button type="submit">Запустить</button>
+
+</form>
+
+{% if success %}
+    <h2>Результат</h2>
+    <p>Файлы сохранены в: {{ sbom_dir }}</p>
+
+    <ul>
+        {% for r in results %}
+            <li>{{ r.artifact }} {{ r.version }} — {{ r.status }} {{ r.message }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
 </body>
 </html>
+

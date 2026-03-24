@@ -1,75 +1,133 @@
-from lib.BomSaver import BomSaver
-from lib.DependencyTrackManager import DependencyTrackManager
 from flask import Flask, render_template, request
-import re
-from lib.PomGenerator import PomGenerator
-from lib.MavenSearch2 import MavenSearcher
-from lib.SbomGenerator import SbomGenerator
-from lib.filedataloader import FileDataLoader
 import logging
+import re
+import os
+from concurrent.futures import ThreadPoolExecutor
 
-# Настройка логирования
+from lib.MavenSearch import MavenSearcher
+from lib.LibraryProcessor import LibraryProcessor
+
+# -----------------------------------------------------------------------------
+# НАСТРОЙКА ЛОГГИРОВАНИЯ
+# -----------------------------------------------------------------------------
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger()
 
+# -----------------------------------------------------------------------------
+# ИНИЦИАЛИЗАЦИЯ FLASK
+# -----------------------------------------------------------------------------
 app = Flask(__name__)
 
+# -----------------------------------------------------------------------------
+# REGEX ДЛЯ ВАЛИДАЦИИ ВВОДА
+# -----------------------------------------------------------------------------
+# Формат: artifactId/version
+# Допустимые символы определены правилами Maven Coordinates
+# https://maven.apache.org/pom.html#Maven_Coordinates
+LIBRARY_PATTERN = re.compile(r'^[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+$')
+
+# -----------------------------------------------------------------------------
+# ОСНОВНОЙ ROUTE
+# -----------------------------------------------------------------------------
 @app.route("/", methods=["GET", "POST"])
 def index():
+    """
+    Главная страница приложения.
+    GET  — отображение формы
+    POST — обработка ввода пользователя, валидация и запуск генерации
+    """
+
     if request.method == "POST":
-        # 1. Получаем данные из формы
-        # libraries_input = request.form["libraries"].splitlines()
-        libraries_input = re.split(r'[\n\r,;]+', request.form["libraries"])
-        file_prefix = request.form["file_prefix"]
-        save_path = request.form["save_path"]  # Путь из формы
 
+        # ---------------------------------------------------------------------
+        # ПОЛУЧЕНИЕ СЫРЫХ ДАННЫХ ИЗ ФОРМЫ
+        # ---------------------------------------------------------------------
+        libraries_raw = request.form.get("libraries", "").strip()
+        save_path = request.form.get("save_path", "").strip()
+
+        # ---------------------------------------------------------------------
+        # ВАЛИДАЦИЯ ПУТИ СОХРАНЕНИЯ
+        # ---------------------------------------------------------------------
+        if not save_path:
+            return render_template(
+                "index.html",
+                error="Путь для сохранения результатов не указан"
+            )
+
+        if not os.path.isabs(save_path):
+            return render_template(
+                "index.html",
+                error="Путь для сохранения должен быть абсолютным"
+            )
+
+        # ---------------------------------------------------------------------
+        # ВАЛИДАЦИЯ СПИСКА БИБЛИОТЕК
+        # ---------------------------------------------------------------------
+        if not libraries_raw:
+            return render_template(
+                "index.html",
+                error="Список библиотек пуст. Укажите хотя бы одну библиотеку."
+            )
+
+        # Разделение по пробелам, переводам строк, запятым и ;
+        libraries_input = [
+            lib for lib in re.split(r'[\s,;]+', libraries_raw)
+            if lib.strip()
+        ]
+
+        validated_libraries = []
+
+        for lib in libraries_input:
+            if not LIBRARY_PATTERN.match(lib):
+                return render_template(
+                    "index.html",
+                    error=(
+                        f"Неверный формат библиотеки: '{lib}'. "
+                        f"Ожидается формат artifactId/version"
+                    )
+                )
+
+            artifact_id, version = map(str.strip, lib.split("/"))
+            validated_libraries.append((artifact_id, version))
+
+        # ---------------------------------------------------------------------
+        # ОСНОВНАЯ БИЗНЕС-ЛОГИКА (БЕЗ ИЗМЕНЕНИЙ)
+        # ---------------------------------------------------------------------
         maven_searcher = MavenSearcher()
-        dependencies_block = "<dependencies>\n"
+        results = []
 
-        # 2. Поиск библиотек и формирование блока зависимостей
-        for library in libraries_input:
-            if '/' in library:
-                artifact_id, version = library.split('/')
-                dependency_xml = maven_searcher.find_maven_package(artifact_id.strip(), version.strip())
-                if dependency_xml:
-                    dependencies_block += dependency_xml + "\n"
+        with ThreadPoolExecutor() as executor:
+            futures = []
 
-        dependencies_block += "</dependencies>"
+            for artifact_id, version in validated_libraries:
+                processor = LibraryProcessor(
+                    artifact_id,
+                    version,
+                    save_path,
+                    maven_searcher
+                )
+                futures.append(executor.submit(processor.run))
 
-        if dependencies_block == "<dependencies>\n</dependencies>":
-            return render_template("index.html", error="Не удалось найти библиотеки")
+            for future in futures:
+                result = future.result()
+                if result:
+                    results.append(result)
 
-        # 3. Генерация pom.xml
-        pom_generator = PomGenerator()
-        pom_file_path = pom_generator.create_pom_file(dependencies_block)
+        return render_template(
+            "index.html",
+            success=True,
+            sbom_dir=save_path,
+            results=results
+        )
 
-        # 4. Генерация SBOM
-        sbom_generator = SbomGenerator(pom_file_path)
-        sbom_generator.generate_sbom()
-
-        # ✅ Исправленный путь к SBOM-файлу (он находится в `target/`)
-        sbom_file_path = pom_file_path.replace("pom.xml", "target/bom.xml")
-
-        # 5. Копирование SBOM файлов и pom.xml
-        bom_saver = BomSaver(file_prefix, save_path, pom_file_path)
-        bom_saver.copy_sbom_files()
-
-        # 6. Создание проекта в Dependency Track и загрузка SBOM
-        logger.info(f"🔄 Создаем проект в Dependency Track: {file_prefix}")
-        dt_manager = DependencyTrackManager(file_prefix, pom_file_path)
-
-        if dt_manager.create_project():
-            logger.info("✅ Проект успешно создан, загружаем SBOM...")
-            if dt_manager.upload_sbom():
-                logger.info("✅ SBOM успешно загружен в Dependency Track.")
-            else:
-                logger.error("❌ Ошибка загрузки SBOM.")
-        else:
-            logger.error("❌ Ошибка создания проекта в Dependency Track.")
-
-        return render_template("index.html", pom_file=pom_file_path, success=True, sbom_dir=save_path)
-
+    # -------------------------------------------------------------------------
+    # GET ЗАПРОС — ПРОСТО ОТОБРАЖАЕМ ФОРМУ
+    # -------------------------------------------------------------------------
     return render_template("index.html")
 
+
+# -----------------------------------------------------------------------------
+# ЗАПУСК ПРИЛОЖЕНИЯ
+# -----------------------------------------------------------------------------
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    app.run(debug=True, host="0.0.0.0", port=5002)

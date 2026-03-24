@@ -1,0 +1,298 @@
+import requests
+import logging
+import xml.etree.ElementTree as ET
+from urllib.parse import urljoin
+from config import MAVEN_CENTRAL_URL
+
+logger = logging.getLogger()
+
+# 👇 Расширяемый пул дополнительных репозиториев.
+#    Можно добавлять новые словари с нужным типом/URL, не меняя логику поиска.
+EXTRA_REPOSITORIES = [
+    {
+        "name": "Atlassian Public",
+        "type": "artifactory",  # поддерживаются: "artifactory", "solr"
+        "base_url": "https://packages.atlassian.com/maven",
+        "repos": ["public"],    # опционально: ограничение по репозиториям внутри Artifactory
+    },
+    {
+        "name": "Atlassian Public (legacy)",
+        "type": "artifactory",
+        "base_url": "https://maven.artifacts.atlassian.com",
+        "repos": ["public"],
+    },
+    # Пример для другого Solr-совместимого индекса (если появится):
+    # {
+    #     "name": "Some Other Solr",
+    #     "type": "solr",
+    #     "search_url": "https://example.org/solrsearch/select"
+    # },
+]
+
+
+class MavenSearcher:
+    def __init__(self, api_url=MAVEN_CENTRAL_URL, extra_repositories=None):
+        self.api_url = api_url
+        self.extra_repositories = extra_repositories or EXTRA_REPOSITORIES
+
+    def find_maven_package(self, artifact_id, version):
+        """
+        Поиск зависимости в Maven Central по artifactId и version.
+        Если не находит — пытается определить groupId автоматически.
+        """
+
+        # Оригинальный способ поиска (по artifactId и version)
+        # params = {
+        #     'q': f'a:"{artifact_id}" AND v:"{version}"',
+        #     'rows': 1,
+        #     'wt': 'json'
+        # }
+
+        # Новый способ — используем тот же запрос как первую попытку
+        params = {
+            'q': f'a:"{artifact_id}" AND v:"{version}"',
+            'rows': 1,
+            'wt': 'json'
+        }
+
+        logger.info(f"Отправка запроса в Maven: {self.api_url}, параметры: {params}")
+
+        try:
+            response = requests.get(self.api_url, params=params, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+            logger.info(f"Ответ от Maven: {data}")
+
+            if data["response"]["numFound"] > 0:
+                doc = data["response"]["docs"][0]
+                return self._build_dependency_xml(doc)
+
+            # Если не найдено — пробуем найти groupId через дополнительный поиск
+            logger.warning(f"Не найдено библиотек для запроса: {params}")
+            xml_from_central = self._try_resolve_and_retry(artifact_id, version)
+            if xml_from_central:
+                return xml_from_central
+
+            # 👉 Новое: если в Central не нашли — пробуем доступные внешние репозитории
+            logger.info("🌐 Переход к поиску в дополнительных репозиториях…")
+            xml_from_others = self._search_other_repositories(artifact_id, version)
+            if xml_from_others:
+                return xml_from_others
+
+            logger.error(f"❌ {artifact_id}:{version}: Не найдена в доступных репозиториях")
+            return None
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Ошибка при запросе в Maven Central: {e}")
+            return None
+
+    def _try_resolve_and_retry(self, artifact_id, version):
+        """
+        Выполняет повторный поиск по artifactId, чтобы определить groupId.
+        Затем повторно вызывает _build_dependency_xml().
+        """
+        logger.info(f"🔁 Попытка найти groupId для: {artifact_id}:{version}")
+
+        # Запрос по artifactId в кавычках — на случай точек в названии
+        params = {
+            'q': f'"{artifact_id}" AND v:"{version}"',
+            'rows': 5,
+            'wt': 'json'
+        }
+
+        try:
+            response = requests.get(self.api_url, params=params, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+            logger.info(f"Результат повторного поиска: {data}")
+
+            docs = data["response"]["docs"]
+            for doc in docs:
+                if doc.get("a") == artifact_id and doc.get("v") == version:
+                    logger.info(f"✅ Найден groupId: {doc.get('g')} для {artifact_id}")
+                    return self._build_dependency_xml(doc)
+
+            logger.warning(f"❌ Не удалось определить groupId для {artifact_id}")
+            return None
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Ошибка при повторном запросе: {e}")
+            return None
+
+    def _build_dependency_xml(self, doc):
+        """
+        Формирует XML-блок <dependency>...</dependency> из ответа Maven Central
+        """
+        dependency_xml = "<dependency>\n"
+
+        if 'g' in doc:
+            dependency_xml += f"    <groupId>{doc['g']}</groupId>\n"
+        if 'a' in doc:
+            dependency_xml += f"    <artifactId>{doc['a']}</artifactId>\n"
+        if 'v' in doc:
+            dependency_xml += f"    <version>{doc['v']}</version>\n"
+        if 'p' in doc:  # packaging
+            dependency_xml += f"    <type>{doc['p']}</type>\n"
+
+        dependency_xml += "</dependency>"
+
+        return dependency_xml.strip()
+
+    # ====== ↓↓↓ Новые методы: поиск в других репозиториях ↓↓↓ ======
+
+    def _search_other_repositories(self, artifact_id, version):
+        """
+        Ищет артефакт в дополнительных репозиториях из пула self.extra_repositories.
+        Возвращает XML dependency при успехе или None.
+        """
+        for repo in self.extra_repositories:
+            rtype = repo.get("type")
+            try:
+                if rtype == "solr":
+                    # Solr-совместимые индексы (как у Maven Central)
+                    search_url = repo.get("search_url")
+                    if not search_url or search_url == self.api_url:
+                        continue
+                    logger.info(f"🧭 Поиск (solr) в {repo.get('name')} → {search_url}")
+                    xml = self._search_solr_like(search_url, artifact_id, version)
+                    if xml:
+                        return xml
+
+                elif rtype == "artifactory":
+                    # Artifactory: используем поиск по имени файла POM
+                    base_url = repo.get("base_url")
+                    repos = repo.get("repos", None)
+                    logger.info(f"🧭 Поиск (artifactory) в {repo.get('name')} → {base_url}")
+                    xml = self._search_artifactory_by_pom(base_url, artifact_id, version, repos=repos)
+                    if xml:
+                        return xml
+
+                else:
+                    logger.warning(f"Тип репозитория не поддержан: {rtype} ({repo.get('name')})")
+
+            except requests.exceptions.RequestException as e:
+                logger.error(f"Ошибка при обращении к {repo.get('name')}: {e}")
+                continue
+
+        return None
+
+    def _search_solr_like(self, search_url, artifact_id, version):
+        """
+        Делает те же попытки поиска, что и по Central:
+        1) a:"artifactId" AND v:"version"
+        2) "artifactId" AND v:"version" (как в твоём оригинале)
+        """
+        # 1) точный запрос по полям
+        params1 = {
+            'q': f'a:"{artifact_id}" AND v:"{version}"',
+            'rows': 1,
+            'wt': 'json'
+        }
+        logger.info(f"Отправка запроса (SOLR #1): {search_url}, параметры: {params1}")
+        r1 = requests.get(search_url, params=params1, timeout=10)
+        r1.raise_for_status()
+        data1 = r1.json()
+        logger.info(f"Ответ (SOLR #1): {data1}")
+        if data1.get("response", {}).get("numFound", 0) > 0:
+            doc = data1["response"]["docs"][0]
+            return self._build_dependency_xml(doc)
+
+        # 2) повторная попытка (как у тебя)
+        params2 = {
+            'q': f'"{artifact_id}" AND v:"{version}"',
+            'rows': 5,
+            'wt': 'json'
+        }
+        logger.info(f"Отправка запроса (SOLR #2): {search_url}, параметры: {params2}")
+        r2 = requests.get(search_url, params=params2, timeout=10)
+        r2.raise_for_status()
+        data2 = r2.json()
+        logger.info(f"Ответ (SOLR #2): {data2}")
+        for doc in data2.get("response", {}).get("docs", []):
+            if doc.get("a") == artifact_id and doc.get("v") == version:
+                logger.info(f"✅ Найден groupId: {doc.get('g')} для {artifact_id} в {search_url}")
+                return self._build_dependency_xml(doc)
+
+        logger.warning("Не найдено результатов в SOLR-совместимом репозитории")
+        return None
+
+    def _search_artifactory_by_pom(self, base_url, artifact_id, version, repos=None):
+        """
+        Ищет POM-файл по точному имени 'artifactId-version.pom' через Artifactory API.
+        Затем парсит POM и формирует dependency XML.
+
+        Преимущество: не нужно знать groupId заранее — его достаём из POM.
+        """
+        search_endpoint = urljoin(base_url.rstrip('/') + '/', "api/search/artifact")
+        name = f"{artifact_id}-{version}.pom"
+        params = {"name": name}
+        if repos:
+            # репозитории в Artifactory можно ограничивать CSV-списком
+            params["repos"] = ",".join(repos)
+
+        logger.info(f"Отправка запроса в Artifactory: {search_endpoint}, параметры: {params}")
+        resp = requests.get(search_endpoint, params=params, timeout=15)
+        resp.raise_for_status()
+        data = resp.json()
+        logger.info(f"Ответ Artifactory (artifact search): {data}")
+
+        results = data.get("results", [])
+        for item in results:
+            # В Artifactory обычно есть поля 'uri' и/или 'downloadUri'
+            pom_url = item.get("downloadUri") or item.get("uri")
+            if not pom_url:
+                continue
+
+            # Скачиваем POM и читаем координаты
+            try:
+                pom_resp = requests.get(pom_url, timeout=15)
+                pom_resp.raise_for_status()
+                g, a, v, p = self._parse_pom_coordinates(pom_resp.text)
+                if a == artifact_id and v == version:
+                    doc = {"g": g, "a": a, "v": v}
+                    if p:
+                        doc["p"] = p
+                    logger.info(f"✅ Найдено в Artifactory: {g}:{a}:{v}")
+                    return self._build_dependency_xml(doc)
+            except requests.exceptions.RequestException as e:
+                logger.warning(f"Не удалось скачать/распарсить POM: {pom_url} — {e}")
+                continue
+
+        logger.warning(f"❌ POM {name} не найден в {base_url}")
+        return None
+
+    @staticmethod
+    def _parse_pom_coordinates(pom_xml_text):
+        """
+        Парсит координаты из POM: groupId, artifactId, version, packaging.
+        Учитывает пространство имён и наследование groupId/version от <parent>.
+        """
+        try:
+            root = ET.fromstring(pom_xml_text)
+        except ET.ParseError:
+            return None, None, None, None
+
+        # Определяем namespace, если есть
+        if root.tag.startswith("{"):
+            ns = {"m": root.tag.split("}")[0].strip("{")}
+            find = lambda path: root.find(path, namespaces=ns)
+            findtext = lambda path: root.findtext(path, namespaces=ns)
+        else:
+            ns = None
+            find = lambda path: root.find(path)
+            findtext = lambda path: root.findtext(path)
+
+        g = findtext("m:groupId" if ns else "groupId")
+        a = findtext("m:artifactId" if ns else "artifactId")
+        v = findtext("m:version" if ns else "version")
+        p = findtext("m:packaging" if ns else "packaging")
+
+        # Наследование от parent при отсутствии g/v
+        parent = find("m:parent" if ns else "parent")
+        if parent is not None:
+            if not g:
+                g = parent.findtext("m:groupId" if ns else "groupId", namespaces=ns) if ns else parent.findtext("groupId")
+            if not v:
+                v = parent.findtext("m:version" if ns else "version", namespaces=ns) if ns else parent.findtext("version")
+
+        return g, a, v, p

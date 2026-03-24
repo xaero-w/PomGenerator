@@ -1,0 +1,47 @@
+from flask import Flask, render_template, request
+import logging
+import re
+from concurrent.futures import ThreadPoolExecutor
+
+from lib.MavenSearch import MavenSearcher
+from lib.LibraryProcessor import LibraryProcessor
+
+# Настройка логгирования
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger()
+
+app = Flask(__name__)
+
+@app.route("/", methods=["GET", "POST"])
+def index():
+    if request.method == "POST":
+        # Получаем список библиотек и путь сохранения
+        # libraries_input = re.split(r'[\n\r,;]+', request.form["libraries"])
+        libraries_input = [lib for lib in re.split(r'[\s,;]+', request.form["libraries"]) if lib.strip()]
+        save_path = request.form["save_path"]
+
+        maven_searcher = MavenSearcher()
+        results = []
+
+        # Обрабатываем каждую библиотеку параллельно
+        with ThreadPoolExecutor() as executor:
+            futures = []
+            for lib in libraries_input:
+                if '/' in lib:
+                    artifact_id, version = map(str.strip, lib.split('/'))
+                    processor = LibraryProcessor(artifact_id, version, save_path, maven_searcher)
+                    futures.append(executor.submit(processor.run))
+
+            for future in futures:
+                result = future.result()
+                if result:
+                    results.append(result)
+
+        return render_template("index.html", success=True, sbom_dir=save_path, results=results)
+
+    return render_template("index.html")
+
+
+# Запуск приложения
+if __name__ == "__main__":
+    app.run(debug=True, host="0.0.0.0", port=5002)

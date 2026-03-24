@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Генератор SBOM / POM</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f8f8f8;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        form {
+            background-color: #fff;
+            padding: 20px;
+            border: 1px solid #ccc;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        textarea,
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .success {
+            color: green;
+            margin-bottom: 15px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f0f0f0;
+        }
+
+        tr:nth-child(even) {
+            background-color: #fafafa;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Генерация SBOM для Maven-библиотек</h1>
+
+    <form method="post">
+        <label for="libraries">Список библиотек (artifact/version):</label>
+        <textarea name="libraries" id="libraries" rows="6" placeholder="log4j/1.2.17&#10;xercesImpl/2.12.0"></textarea>
+
+        <label for="save_path">Путь для сохранения результатов:</label>
+        <input type="text" name="save_path" id="save_path" placeholder="./output">
+
+        <button type="submit">Начать генерацию</button>
+    </form>
+
+    {% if success %}
+        <div class="success">
+            ✅ Обработка завершена. Файлы сохранены в: <strong>{{ sbom_dir }}</strong>
+        </div>
+    {% endif %}
+
+    {% if results %}
+        <h2>Отчёт о проверке библиотек:</h2>
+        <table>
+            <tr>
+                <th>Библиотека</th>
+                <th>Версия</th>
+                <th>Статус</th>
+                <th>Сообщение</th>
+            </tr>
+            {% for r in results %}
+            <tr>
+                <td>{{ r.artifact }}</td>
+                <td>{{ r.version }}</td>
+                <td>{{ r.status }}</td>
+                <td>{{ r.message }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% endif %}
+
+</body>
+</html>

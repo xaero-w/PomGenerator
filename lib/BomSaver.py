@@ -5,37 +5,32 @@ import logging
 logger = logging.getLogger()
 
 class BomSaver:
-    def __init__(self, prefix, save_path, pom_file_path):
-        self.prefix = prefix
-        self.save_path = save_path  # Путь из формы
-        self.pom_file_path = pom_file_path  # Путь к pom.xml
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        self.source_dir = os.path.join(base_dir, '..', 'pom_project', 'target')
+    def __init__(self, artifact_id, version, target_dir, pom_path):
+        # Сохраняем параметры
+        self.artifact_id = artifact_id            # Например: log4j
+        self.version = version                    # Например: 1.2.17
+        self.target_dir = target_dir              # Полный путь до каталога log4j-1.2.17
+        self.pom_path = pom_path                  # Путь к pom-файлу, который был сгенерен
 
-        if not os.path.exists(self.save_path):
-            os.makedirs(self.save_path)
-            logger.info(f"Создана директория для копирования файлов: {self.save_path}")
+    def copy_sbom_files(self, custom_sbom_path=None):
+        # Копируем pom-файл
+        dest_pom = os.path.join(self.target_dir, f"{self.artifact_id}_pom.xml")
+        try:
+            shutil.copyfile(self.pom_path, dest_pom)
+            logger.info(f"✅ Файл pom скопирован: {dest_pom}")
+        except Exception as e:
+            logger.error(f"❌ Ошибка копирования pom.xml: {e}")
 
-    def copy_sbom_files(self):
-        """
-        Копирование SBOM файлов (bom.xml, bom.json, pom.xml) + dependencies.txt в указанный каталог.
-        """
-        files_to_copy = ['bom.xml', 'bom.json', 'dependencies.txt']  # Добавили dependencies.txt
-
-        # Копируем SBOM файлы + dependencies.txt
-        for file_name in files_to_copy:
-            source_file = os.path.join(self.source_dir, file_name)
-            if os.path.exists(source_file):
-                destination_file = os.path.join(self.save_path, f"{self.prefix}_{file_name}")
-                shutil.copy2(source_file, destination_file)
-                logger.info(f"Файл {file_name} скопирован как {destination_file}")
-            else:
-                logger.warning(f"Файл {file_name} не найден в {self.source_dir}")
-
-        # Копируем pom.xml с префиксом
-        if os.path.exists(self.pom_file_path):
-            pom_destination = os.path.join(self.save_path, f"{self.prefix}_pom.xml")
-            shutil.copy2(self.pom_file_path, pom_destination)
-            logger.info(f"Файл pom.xml скопирован как {pom_destination}")
+        # Копируем sbom-файл (если он существует)
+        if custom_sbom_path and os.path.exists(custom_sbom_path):
+            dest_sbom_xml = os.path.join(self.target_dir, f"{self.artifact_id}_bom.xml")
+            dest_sbom_json = os.path.join(self.target_dir, f"{self.artifact_id}_bom.json")
+            try:
+                shutil.copyfile(custom_sbom_path, dest_sbom_xml)
+                shutil.copyfile(custom_sbom_path, dest_sbom_json)
+                logger.info(f"✅ Файл SBOM скопирован: {dest_sbom_xml}")
+                logger.info(f"✅ Файл SBOM скопирован: {dest_sbom_json}")
+            except Exception as e:
+                logger.error(f"❌ Ошибка копирования SBOM: {e}")
         else:
-            logger.warning(f"Файл pom.xml не найден по пути {self.pom_file_path}")
+            logger.warning(f"⚠️ SBOM-файл не найден или не передан: {custom_sbom_path}")
