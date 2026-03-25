@@ -1,635 +1,377 @@
-import time
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any, Dict, List
+from urllib.parse import urlparse
+
 import requests
-import logging
-import xml.etree.ElementTree as ET
-from urllib.parse import urljoin, urlparse
 
-# ВАЖНО: этот импорт обязан быть ДО объявления класса,
-# потому что api_url=MAVEN_CENTRAL_URL вычисляется при импорте модуля.
-from config import MAVEN_CENTRAL_URL
 
-logger = logging.getLogger()
+@dataclass(frozen=True)
+class MavenCoordinates:
+    """
+    Строгое представление Maven coordinates.
 
-# Базовый репозиторий артефактов Maven Central (POM/JAR)
-REPO1_BASE_URL = "https://repo1.maven.org/maven2/"
+    Поля:
+      group_id:
+        Идентификатор группы проекта (groupId).
 
-# Дополнительные репозитории (оставлены как в исходнике, можно убрать, если не нужны)
-EXTRA_REPOSITORIES = [
-    {
-        "name": "Atlassian Public",
-        "type": "artifactory",  # "artifactory" | "solr"
-        "base_url": "https://packages.atlassian.com/maven",
-        "repos": ["public"],
-    },
-    {
-        "name": "Atlassian Public (legacy)",
-        "type": "artifactory",
-        "base_url": "https://maven.artifacts.atlassian.com",
-        "repos": ["public"],
-    },
-]
+      artifact_id:
+        Идентификатор артефакта (artifactId).
+
+      version:
+        Версия артефакта (version).
+
+    Основание:
+      Maven coordinates состоят из groupId, artifactId и version.
+    """
+    group_id: str
+    artifact_id: str
+    version: str
+
+
+@dataclass(frozen=True)
+class MavenSearchResult:
+    """
+    Результат точного поиска в Maven Central по GAV.
+
+    Поля:
+      coordinates:
+        Те координаты, которые были вычислены из URL и использованы для поиска.
+
+      num_found:
+        Значение response.numFound из ответа Solr / Maven Central Search API.
+
+      docs:
+        Список документов response.docs, которые вернул поиск.
+
+      raw_response:
+        Полный JSON-ответ API без изменений.
+    """
+    coordinates: MavenCoordinates
+    num_found: int
+    docs: List[Dict[str, Any]]
+    raw_response: Dict[str, Any]
 
 
 class MavenSearcher:
+    """
+    Класс поиска Maven-артефактов по ссылкам Maven2 layout.
+
+    Основная идея:
+      1. На вход подаётся URL каталога версии в Maven repository layout.
+      2. Из URL детерминированно извлекаются groupId, artifactId, version.
+      3. По этим координатам выполняется точный запрос в Maven Central Search API.
+
+    Почему это корректно:
+      - Maven coordinates = groupId + artifactId + version.
+      - Maven2/default layout кодирует эти координаты в пути URL.
+      - Central Search API принимает q, rows, wt и поддерживает core=gav
+        для работы с версиями артефактов.
+    """
+
     def __init__(
         self,
-        api_url=MAVEN_CENTRAL_URL,
-        extra_repositories=None,
-        min_interval_seconds: float = 2,
-        max_retries_on_429: int = 2,
-        retry_backoff_base: float = 1.0,
-    ):
+        api_url: str = "https://search.maven.org/solrsearch/select",
+        timeout_seconds: int = 10,
+        rows: int = 20,
+    ) -> None:
         """
-        Обёртка над:
-          - Maven Central Search API (Solr) — для поиска метаданных (в т.ч. groupId)
-          - repo1.maven.org — для проверки реального наличия артефакта (POM/JAR)
-          - дополнительными репозиториями (fallback)
+        Инициализация клиента поиска.
 
-        ВАЖНО ПРО ВХОДНЫЕ ДАННЫЕ:
-          - Maven-координаты уникальны по тройке: groupId:artifactId:version (GAV)
-          - artifactId + version НЕ гарантируют уникальность глобально, но:
-              - если мы ищем groupId через Solr, то обязаны учитывать version,
-                иначе Solr может отдать "чужой" groupId с таким же artifactId
-                (как у тебя в логе).
+        Аргументы:
+          api_url:
+            Базовый endpoint Maven Central Search API.
+            По официальной документации используется /solrsearch/select.
 
-        :param api_url: URL search API Maven Central
-                        (обычно https://search.maven.org/solrsearch/select)
-        :param extra_repositories: список дополнительных репозиториев (см. EXTRA_REPOSITORIES)
-        :param min_interval_seconds: минимальный интервал между запросами к Maven Central / repo1
-        :param max_retries_on_429: максимальное число повторов запроса при HTTP 429
-        :param retry_backoff_base: базовая задержка (сек) для backoff при HTTP 429:
-                                   base, 2*base, 4*base, ...
+          timeout_seconds:
+            Таймаут HTTP-запроса в секундах.
+
+          rows:
+            Значение параметра rows.
+            Ограничивает количество результатов, возвращаемых сервером.
+
+        Замечание:
+          Параметр wt отвечает за формат ответа, и здесь далее фиксируется как json.
         """
         self.api_url = api_url
-        self.extra_repositories = extra_repositories or EXTRA_REPOSITORIES
+        self.timeout_seconds = timeout_seconds
+        self.rows = rows
 
-        # Клиентский троттлинг (чтобы не ловить rate limits Maven Central / repo1)
-        self.min_interval_seconds = min_interval_seconds
-        self.max_retries_on_429 = max_retries_on_429
-        self.retry_backoff_base = retry_backoff_base
-
-        # Временная метка последнего запроса к Maven Central / repo1
-        self._last_maven_call_ts = 0.0
-
-        # requests.Session() нужен, чтобы:
-        #  - переиспользовать TCP/TLS соединения (меньше ошибок/разрывов)
-        #  - не создавать новое соединение на каждый HEAD/GET
-        #  - повысить стабильность при большом числе проверок в repo1
-        self._session = requests.Session()
-
-        # Минимально полезные заголовки:
-        #  - User-Agent иногда влияет на поведение прокси/шлюзов
-        #  - Accept тоже помогает некоторым middleware
-        self._session.headers.update({
-            "User-Agent": "PomGenerator/1.0 (+requests)",
-            "Accept": "*/*",
-        })
-
-    # -------------------------------------------------------------------------
-    #   НОВОЕ (МИНИМАЛЬНОЕ): парсер твоего формата "artifactId/version"
-    # -------------------------------------------------------------------------
-
-    @staticmethod
-    def parse_spec(spec: str):
+    def parse_repo1_url(self, artifact_url: str) -> MavenCoordinates:
         """
-        Разбирает строку формата:
-            "artifactId/version"
-        и возвращает кортеж:
-            (artifact_id, version)
+        1 действие: извлечь Maven coordinates из URL Maven2 layout.
 
-        Зачем это нужно:
-          - твой лог показывает формат "oss-parent/73"
-          - а методы поиска ожидают 2 аргумента: artifact_id и version
-          - если кормить "oss-parent/73" как artifact_id, Solr запрос станет a:"oss-parent/73"
-            и ничего не найдётся.
+        Ожидаемый синтаксис входного URL:
+          https://repo1.maven.org/maven2/<group-path>/<artifactId>/<version>/
+          либо любой URL, у которого path после /maven2/ следует layout:
+          <groupId as directory>/<artifactId>/<version>
 
-        Если в spec нет '/', бросаем ValueError — чтобы ошибка была явной,
-        а не “тихий” 404 потом.
+        Логика:
+          - path разбивается на сегменты;
+          - последний сегмент = version;
+          - предпоследний сегмент = artifactId;
+          - все сегменты между "maven2" и artifactId = groupId path;
+          - groupId восстанавливается заменой "/" -> "."
+
+        Аргументы:
+          artifact_url:
+            URL каталога версии артефакта в Maven repository layout.
+
+        Возвращает:
+          MavenCoordinates(group_id, artifact_id, version)
+
+        Исключения:
+          ValueError:
+            Если URL не соответствует ожидаемому Maven2 layout.
         """
-        if not isinstance(spec, str):
-            raise ValueError(f"spec должен быть строкой, получено: {type(spec)}")
+        # Берём только path-часть URL.
+        # Пример:
+        #   /maven2/com/fasterxml/jackson/jackson-bom/2.20.1/
+        path = urlparse(artifact_url).path
 
-        s = spec.strip()
-        if "/" not in s:
+        # Разбиваем путь на сегменты и удаляем пустые элементы,
+        # возникающие из-за ведущего и завершающего символов '/'.
+        parts = [part for part in path.split("/") if part]
+
+        # Минимально ожидаем структуру:
+        #   maven2 / <group path> / <artifactId> / <version>
+        # Значит сегментов должно быть минимум 4.
+        if len(parts) < 4:
             raise ValueError(
-                f"Неверный формат '{spec}'. Ожидаю 'artifactId/version', например 'jackson-bom/2.20.1'"
+                f"URL не похож на Maven2 layout (слишком мало сегментов): {artifact_url}"
             )
 
-        artifact_id, version = s.split("/", 1)
-        artifact_id = artifact_id.strip()
-        version = version.strip()
-
-        if not artifact_id or not version:
+        # Первый сегмент должен быть 'maven2', потому что именно после него
+        # в default layout идёт путь вида:
+        #   <groupId as directory>/<artifactId>/<version>
+        if parts[0] != "maven2":
             raise ValueError(
-                f"Неверный формат '{spec}'. artifactId и version не должны быть пустыми"
+                f"URL не соответствует Maven2 layout: отсутствует сегмент 'maven2': {artifact_url}"
             )
 
-        return artifact_id, version
+        # Последний сегмент в URL каталога версии — это version.
+        version = parts[-1]
 
-    def find_maven_package_from_spec(self, spec: str):
-        """
-        Удобный метод именно под твой формат ввода:
-            searcher.find_maven_package_from_spec("jackson-bom/2.20.1")
-        """
-        artifact_id, version = self.parse_spec(spec)
-        return self.find_maven_package(artifact_id, version)
+        # Предпоследний сегмент — artifactId.
+        artifact_id = parts[-2]
 
-    # -------------------------------------------------------------------------
-    #   Вспомогательные методы: троттлинг + обёртка вокруг requests
-    # -------------------------------------------------------------------------
-
-    def _throttle_if_needed(self, url: str):
-        """
-        Гарантирует минимальный интервал между запросами к Maven Central / repo1.
-
-        Тормозим только для хостов:
-          - search.maven.org (Solr API)
-          - repo1.maven.org  (файлы артефактов)
-        Остальные URL (сторонние репозитории) не трогаем.
-        """
-        host = urlparse(url).netloc
-        if host not in ("search.maven.org", "repo1.maven.org"):
-            return
-
-        now = time.time()
-        delta = now - self._last_maven_call_ts
-        if delta < self.min_interval_seconds:
-            sleep_for = self.min_interval_seconds - delta
-            logger.debug(
-                f"⌛ Троттлинг запросов к {host}: спим {sleep_for:.3f} с перед следующим запросом"
-            )
-            time.sleep(sleep_for)
-
-        self._last_maven_call_ts = time.time()
-
-    def _request(self, method: str, url: str, *, allow_429_retry: bool = True, **kwargs):
-        """
-        Обёртка вокруг requests.request с:
-          - клиентским троттлингом;
-          - retry с экспоненциальным backoff при HTTP 429.
-        """
-        self._throttle_if_needed(url)
-
-        attempt = 0
-        while True:
-            # Используем Session, чтобы соединения не рвались при частых запросах
-            response = self._session.request(method, url, **kwargs)
-
-            # Если не 429 или ретраи отключены — возвращаем ответ как есть
-            if not allow_429_retry or response.status_code != 429:
-                return response
-
-            # Если 429 и ещё можно повторить
-            if attempt >= self.max_retries_on_429:
-                logger.warning(
-                    f"Получен HTTP 429 от {url}, но лимит повторов исчерпан "
-                    f"({self.max_retries_on_429}). Возвращаем ответ как есть."
-                )
-                return response
-
-            # Экспоненциальный backoff: base, 2*base, 4*base, ...
-            sleep_for = self.retry_backoff_base * (2 ** attempt)
-            attempt += 1
-            logger.warning(
-                f"Получен HTTP 429 от {url}, пробуем повторить {attempt}/{self.max_retries_on_429} "
-                f"через {sleep_for:.1f} с"
-            )
-            time.sleep(sleep_for)
-            self._throttle_if_needed(url)
-
-    # -------------------------------------------------------------------------
-    #   Основной публичный метод: поиск по artifactId + version
-    # -------------------------------------------------------------------------
-
-    def find_maven_package(self, artifact_id, version):
-        """
-        Поиск зависимости по artifactId и version.
-
-        ВАЖНО:
-        - Solr (search.maven.org) может НЕ знать про нужную version (numFound = 0 для 4.0.1),
-          хотя POM/JAR уже лежат в repo1.maven.org.
-        - Поэтому:
-            1) Через search.maven.org мы определяем ТОЛЬКО groupId по artifactId.
-            2) Через repo1.maven.org проверяем, что POM такой версии реально существует.
-            3) Собираем <dependency> сами из groupId/artifactId/version.
-        - Старый механизм (_try_resolve_and_retry + внешние репозитории) сохранён как fallback.
-        """
-
-        # 1) Определяем groupId через search.maven.org (Solr API)
-        #    КРИТИЧНО: ищем по artifactId + version, иначе можно взять "чужой" groupId.
-        group_id = self._resolve_group_id(artifact_id, version)
-
-        if not group_id:
-            # Если groupId не смогли определить — используем fallback-стратегии
-            logger.warning(
-                f"Не удалось определить groupId по '{artifact_id}:{version}' — "
-                f"пробуем старый механизм и внешние репозитории"
+        # Всё между 'maven2' и artifactId — это groupId как набор директорий.
+        group_path_segments = parts[1:-2]
+        if not group_path_segments:
+            raise ValueError(
+                f"Невозможно извлечь groupId из URL: {artifact_url}"
             )
 
-            # Старый путь (fallback)
-            xml_from_central = self._try_resolve_and_retry(artifact_id, version)
-            if xml_from_central:
-                return xml_from_central
+        # Восстанавливаем groupId, заменяя разделение по каталогам на dotted notation.
+        group_id = ".".join(group_path_segments)
 
-            # Внешние репозитории
-            logger.info("🌐 Переход к поиску в дополнительных репозиториях…")
-            xml_from_others = self._search_other_repositories(artifact_id, version)
-            if xml_from_others:
-                return xml_from_others
+        return MavenCoordinates(
+            group_id=group_id,
+            artifact_id=artifact_id,
+            version=version,
+        )
 
-            logger.error(f"❌ {artifact_id}:{version}: Не найдена в доступных репозиториях")
-            return None
-
-        # 2) Проверяем POM в repo1.maven.org
-        if not self._check_repo1_pom_exists(group_id, artifact_id, version):
-            logger.error(
-                f"POM {group_id}:{artifact_id}:{version} не найден в repo1.maven.org "
-                f"(или repo1 временно недоступен)"
-            )
-            return None
-
-        # 3) Собираем dependency XML вручную
-        doc = {"g": group_id, "a": artifact_id, "v": version}
-        logger.info(f"✅ Собрана зависимость: {group_id}:{artifact_id}:{version}")
-        return self._build_dependency_xml(doc)
-
-    # -------------------------------------------------------------------------
-    #   Вспомогательные методы для основного поиска
-    # -------------------------------------------------------------------------
-
-    def _resolve_group_id(self, artifact_id: str, version: str):
+    def build_exact_gav_query(self, coordinates: MavenCoordinates) -> str:
         """
-        Определяет groupId по artifactId через search.maven.org.
+        1 действие: собрать точный Solr-запрос q по координатам GAV.
 
-        НИКАКОГО поиска по версии здесь нет — только a:"artifact".
-        Этого достаточно, чтобы дальше собрать g:a:v вручную.
+        Синтаксис:
+          g:"<groupId>" AND a:"<artifactId>" AND v:"<version>"
 
-        # NOTE (фикс): search.maven.org — legacy индекс и может НЕ находить конкретную version
-        # (numFound=0), даже когда POM уже лежит в repo1.maven.org.
-        #
-        # Поэтому стратегия такая:
-        #   1) Берём кандидатов groupId по artifactId (core=ga / дефолтный).
-        #   2) Для каждого кандидата проверяем наличие POM в repo1 по точной version.
-        #   3) Первый groupId, который реально имеет POM нужной версии — и есть правильный.
-        #
-        # Это устраняет твою текущую проблему:
-        #   - oss-parent/73: Solr может не найти v=73, но repo1 содержит com/fasterxml/oss-parent/73
-        #   - jackson-bom/2.20.1: Solr может не найти v=2.20.1, но repo1 содержит com/fasterxml/jackson/...
+        Почему именно так:
+          - q является обязательным параметром стандартного Solr query parser;
+          - стандартный parser поддерживает структурированный синтаксис;
+          - оператор AND требует совпадения всех условий.
+
+        Аргументы:
+          coordinates:
+            Maven coordinates, полученные из URL.
+
+        Возвращает:
+          Строку q для передачи в Maven Central Search API.
         """
-        params = {
-            # ВАЖНО: НЕ core=gav. Тут нам не нужны документы версий.
-            # В дефолтном core (ga) по a:"..." результаты стабильнее.
-            "q": f'a:"{artifact_id}"',
-            "rows": 50,  # берём побольше кандидатов
-            "wt": "json",
-        }
+        return (
+            f'g:"{coordinates.group_id}" '
+            f'AND a:"{coordinates.artifact_id}" '
+            f'AND v:"{coordinates.version}"'
+        )
 
-        logger.info(f"Поиск кандидатов groupId по artifactId в Maven Central: {artifact_id} | {params}")
-
-        try:
-            resp = self._request(
-                "get",
-                self.api_url,
-                params=params,
-                timeout=10,
-                allow_429_retry=True,
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            logger.info(f"Ответ при поиске кандидатов groupId: {data}")
-
-            docs = data.get("response", {}).get("docs", [])
-            if not docs:
-                logger.warning(f"По '{artifact_id}' ничего не найдено в Solr (search.maven.org)")
-                return None
-
-            # 2) Проверяем кандидатов через repo1: кто реально имеет нужную версию.
-            for d in docs:
-                g = d.get("g")
-                a = d.get("a")
-                if not g or a != artifact_id:
-                    continue
-
-                logger.info(f"Проверяем кандидата groupId через repo1: {g}:{artifact_id}:{version}")
-                if self._check_repo1_pom_exists(g, artifact_id, version):
-                    logger.info(f"✅ Подтверждено через repo1: groupId='{g}' для '{artifact_id}:{version}'")
-                    return g
-
-            logger.warning(
-                f"❌ Среди {len(docs)} кандидатов по '{artifact_id}' "
-                f"не найден ни один groupId, у которого есть версия '{version}' в repo1"
-            )
-            return None
-
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Ошибка при поиске groupId в Maven Central: {e}")
-            return None
-
-    def _check_repo1_pom_exists(self, group_id: str, artifact_id: str, version: str) -> bool:
+    def build_search_params(self, coordinates: MavenCoordinates) -> Dict[str, Any]:
         """
-        Проверяет, что POM нужной версии реально существует в repo1.maven.org.
+        1 действие: подготовить параметры HTTP-запроса к Maven Central Search API.
 
-        ПОЧЕМУ ТВОЙ КЕЙС ЛОМАЛСЯ:
-          - у тебя в логах SSLEOFError на HEAD к repo1.maven.org
-          - иногда HEAD режется прокси/шлюзами или ломается на TLS-инспекции
-          - из-за этого проверка версии всегда "False", даже если файл реально есть
+        Используемые ключи:
+          q:
+            Основной Solr-запрос.
 
-        ЧТО ДЕЛАЕМ:
-          1) Пытаемся HEAD (дешево)
-          2) Если HEAD упал по SSL/соединению — делаем GET с Range: bytes=0-0
-             (скачиваем 1 байт, это почти так же дешево, но проходит чаще)
+          core:
+            'gav' — используется для работы с версиями артефактов.
+            В официальном примере Sonatype для "всех версий артефакта"
+            используется core=gav.
+
+          rows:
+            Ограничение количества результатов.
+
+          wt:
+            Формат ответа. Здесь фиксируем json.
+
+        Аргументы:
+          coordinates:
+            Maven coordinates для точного поиска.
+
+        Возвращает:
+          Словарь query-параметров для requests.get(..., params=...).
         """
-        group_path = group_id.replace(".", "/")
-        pom_path = f"{group_path}/{artifact_id}/{version}/{artifact_id}-{version}.pom"
-        url = REPO1_BASE_URL + pom_path
+        q = self.build_exact_gav_query(coordinates)
 
-        logger.info(f"Проверка существования POM в repo1: {url}")
-
-        # --- 1) Пробуем HEAD ---
-        try:
-            resp = self._request("head", url, timeout=15, allow_429_retry=True, allow_redirects=True)
-            if resp.status_code == 200:
-                logger.info("POM в repo1 найден (HEAD=200)")
-                return True
-
-            # 404 — нормальный отрицательный ответ
-            logger.warning(f"repo1 вернул {resp.status_code} для {url} (HEAD)")
-            if resp.status_code == 404:
-                return False
-
-            # Если прилетели редкие коды (403/5xx) — попробуем GET-RANGE ниже как fallback
-        except requests.exceptions.SSLError as e:
-            # Вот твой случай: UNEXPECTED_EOF_WHILE_READING
-            logger.error(f"SSL ошибка на HEAD к repo1: {e} — пробуем GET Range fallback")
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Ошибка при HEAD-запросе к repo1: {e} — пробуем GET Range fallback")
-
-        # --- 2) Fallback: GET c Range (1 байт) ---
-        try:
-            headers = {"Range": "bytes=0-0"}  # 1 байт, почти бесплатно
-            resp = self._request(
-                "get",
-                url,
-                timeout=20,
-                allow_429_retry=True,
-                allow_redirects=True,
-                headers=headers,
-                stream=True,  # не читаем всё тело
-            )
-
-            # 206 Partial Content — идеальный ответ на Range
-            if resp.status_code in (200, 206):
-                logger.info(f"POM в repo1 найден (GET Range={resp.status_code})")
-                return True
-
-            logger.warning(f"repo1 вернул {resp.status_code} для {url} (GET Range)")
-            return False
-
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Ошибка при GET Range-запросе к repo1: {e}")
-            return False
-
-    # -------------------------------------------------------------------------
-    #   Старый механизм и fallback’и
-    # -------------------------------------------------------------------------
-
-    def _try_resolve_and_retry(self, artifact_id, version):
-        """
-        Исторический метод «повторного» поиска.
-
-        В старом коде он пытался искать по кривому запросу с v:"version"
-        и часто ловил 400. Здесь делаем более безопасно:
-          - ищем по artifactId (без v:)
-          - среди найденных документов ищем нужную версию, если репо всё-таки её знает.
-        Это fallback, который используется только если _resolve_group_id вообще не сработал.
-        """
-        logger.info(f"🔁 Повторный поиск для определения зависимости: {artifact_id}:{version}")
-
-        params = {
-            # NOTE (фикс): используем core=gav и фильтрацию по version,
-            # иначе в дефолтном core документы часто не содержат поле v,
-            # и сравнение doc.get("v") ниже почти всегда бесполезно.
+        return {
+            "q": q,
             "core": "gav",
-            "q": f'a:"{artifact_id}" AND v:"{version}"',
-            "rows": 50,
+            "rows": self.rows,
             "wt": "json",
         }
 
-        try:
-            resp = self._request(
-                "get",
-                self.api_url,
-                params=params,
-                timeout=10,
-                allow_429_retry=True,
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            logger.info(f"Результат повторного поиска: {data}")
-
-            docs = data.get("response", {}).get("docs", [])
-            for doc in docs:
-                if doc.get("a") == artifact_id and doc.get("v") == version:
-                    logger.info("✅ Найдено в Maven Central по повторному поиску")
-                    return self._build_dependency_xml(doc)
-
-            logger.warning(f"❌ Не удалось найти {artifact_id}:{version} через повторный поиск")
-            return None
-
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Ошибка при повторном запросе в Maven Central: {e}")
-            return None
-
-    def _build_dependency_xml(self, doc):
+    def execute_search(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Формирует XML-блок <dependency> из словаря с полями:
-          g (groupId), a (artifactId), v (version), p (packaging/type)
+        1 действие: выполнить HTTP GET к Maven Central Search API.
+
+        Аргументы:
+          params:
+            Query-параметры запроса, подготовленные build_search_params().
+
+        Возвращает:
+          Полный JSON-ответ как словарь.
+
+        Исключения:
+          requests.HTTPError:
+            Если сервер вернул ошибку HTTP-уровня.
+          requests.RequestException:
+            Если произошла сетевая ошибка.
+          ValueError:
+            Если ответ невозможно интерпретировать как JSON.
         """
-        dependency_xml = "<dependency>\n"
+        response = requests.get(
+            self.api_url,
+            params=params,
+            timeout=self.timeout_seconds,
+        )
 
-        if "g" in doc:
-            dependency_xml += f"    <groupId>{doc['g']}</groupId>\n"
-        if "a" in doc:
-            dependency_xml += f"    <artifactId>{doc['a']}</artifactId>\n"
-        if "v" in doc:
-            dependency_xml += f"    <version>{doc['v']}</version>\n"
-        if "p" in doc:
-            dependency_xml += f"    <type>{doc['p']}</type>\n"
+        # Не скрываем HTTP-ошибки: вызывающий код должен явно понимать,
+        # что запрос не был успешно выполнен.
+        response.raise_for_status()
 
-        dependency_xml += "</dependency>"
-        return dependency_xml.strip()
+        # Преобразуем JSON-ответ в Python-словарь.
+        return response.json()
 
-    # -------------------------------------------------------------------------
-    #   Поиск в дополнительных репозиториях (Artifactory / Solr-like)
-    # -------------------------------------------------------------------------
-
-    def _search_other_repositories(self, artifact_id, version):
+    def extract_num_found(self, payload: Dict[str, Any]) -> int:
         """
-        Ищет артефакт в дополнительных репозиториях из self.extra_repositories.
+        1 действие: извлечь response.numFound из ответа Solr.
+
+        Ожидаемый фрагмент JSON-структуры:
+          {
+            "response": {
+              "numFound": ...,
+              "docs": [...]
+            }
+          }
+
+        Аргументы:
+          payload:
+            JSON-ответ Maven Central Search API.
+
+        Возвращает:
+          Целое число numFound.
+
+        Исключения:
+          ValueError:
+            Если структура ответа не содержит ожидаемых полей.
         """
-        for repo in self.extra_repositories:
-            rtype = repo.get("type")
-            name = repo.get("name")
+        response_block = payload.get("response")
+        if not isinstance(response_block, dict):
+            raise ValueError("Некорректный ответ API: отсутствует объект 'response'")
 
-            try:
-                if rtype == "solr":
-                    search_url = repo.get("search_url")
-                    if not search_url:
-                        logger.warning(f"{name}: не задан 'search_url' для SOLR-репозитория")
-                        continue
+        num_found = response_block.get("numFound")
+        if not isinstance(num_found, int):
+            raise ValueError("Некорректный ответ API: отсутствует целочисленное поле 'response.numFound'")
 
-                    logger.info(f"🧭 Поиск (solr) в {name} → {search_url}")
-                    xml = self._search_solr_like(search_url, artifact_id, version)
-                    if xml:
-                        return xml
+        return num_found
 
-                elif rtype == "artifactory":
-                    base_url = repo.get("base_url")
-                    if not base_url:
-                        logger.warning(f"{name}: не задан 'base_url' для Artifactory")
-                        continue
-
-                    repos = repo.get("repos")
-                    logger.info(f"🧭 Поиск (artifactory) в {name} → {base_url}")
-                    xml = self._search_artifactory_by_pom(
-                        base_url=base_url,
-                        artifact_id=artifact_id,
-                        version=version,
-                        repos=repos,
-                    )
-                    if xml:
-                        return xml
-
-                else:
-                    logger.warning(f"{name}: неизвестный тип репозитория '{rtype}'")
-
-            except requests.exceptions.RequestException as e:
-                logger.error(f"Ошибка при обращении к {name}: {e}")
-                continue
-
-        return None
-
-    def _search_solr_like(self, search_url, artifact_id, version):
+    def extract_docs(self, payload: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
-        Поиск в SOLR-совместимом репозитории.
+        1 действие: извлечь response.docs из ответа Solr.
+
+        Аргументы:
+          payload:
+            JSON-ответ Maven Central Search API.
+
+        Возвращает:
+          Список документов docs.
+
+        Исключения:
+          ValueError:
+            Если структура ответа не содержит ожидаемых полей.
         """
-        params = {"q": f'a:\\"{artifact_id}\\"', "rows": 50, "wt": "json"}
-        logger.info(f"Отправка запроса (SOLR) в {search_url}, параметры: {params}")
+        response_block = payload.get("response")
+        if not isinstance(response_block, dict):
+            raise ValueError("Некорректный ответ API: отсутствует объект 'response'")
 
-        try:
-            resp = self._request("get", search_url, params=params, timeout=10, allow_429_retry=False)
-            resp.raise_for_status()
-            data = resp.json()
-            logger.info(f"Ответ (SOLR): {data}")
+        docs = response_block.get("docs")
+        if not isinstance(docs, list):
+            raise ValueError("Некорректный ответ API: отсутствует список 'response.docs'")
 
-            docs = data.get("response", {}).get("docs", [])
-            for doc in docs:
-                if doc.get("a") == artifact_id and doc.get("v") == version:
-                    logger.info(f"✅ Найдено в SOLR-репозитории: {doc.get('g')}:{artifact_id}:{version}")
-                    return self._build_dependency_xml(doc)
+        return docs
 
-            logger.warning("Не найдено результатов в SOLR-репозитории")
-            return None
-
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Ошибка при запросе в SOLR-репозиторий {search_url}: {e}")
-            return None
-
-    def _search_artifactory_by_pom(self, base_url, artifact_id, version, repos=None):
+    def find_by_repo1_url(self, artifact_url: str) -> MavenSearchResult:
         """
-        Ищет POM-файл по имени 'artifactId-version.pom' через Artifactory API.
+        Высокоуровневый метод: пройти весь сценарий для одного URL.
+
+        Последовательность внутренних шагов:
+          1. parse_repo1_url()      -> извлечь GAV из URL
+          2. build_search_params()  -> собрать параметры запроса
+          3. execute_search()       -> выполнить HTTP GET
+          4. extract_num_found()    -> извлечь numFound
+          5. extract_docs()         -> извлечь docs
+
+        Аргументы:
+          artifact_url:
+            URL артефакта в Maven2 layout.
+
+        Возвращает:
+          MavenSearchResult со всеми ключевыми данными.
         """
-        search_endpoint = urljoin(base_url.rstrip("/") + "/", "api/search/artifact")
-        pom_name = f"{artifact_id}-{version}.pom"
+        coordinates = self.parse_repo1_url(artifact_url)
+        params = self.build_search_params(coordinates)
+        payload = self.execute_search(params)
+        num_found = self.extract_num_found(payload)
+        docs = self.extract_docs(payload)
 
-        params = {"name": pom_name}
-        if repos:
-            params["repos"] = ",".join(repos)
+        return MavenSearchResult(
+            coordinates=coordinates,
+            num_found=num_found,
+            docs=docs,
+            raw_response=payload,
+        )
 
-        logger.info(f"Отправка запроса в Artifactory: {search_endpoint}, параметры: {params}")
-        resp = self._request("get", search_endpoint, params=params, timeout=10, allow_429_retry=False)
-        resp.raise_for_status()
-        data = resp.json()
-        logger.info(f"Ответ Artifactory (artifact search): {data}")
-
-        results = data.get("results") or data.get("artifacts") or []
-
-        for item in results:
-            pom_url = item.get("downloadUri") or item.get("uri")
-            if not pom_url:
-                continue
-
-            if pom_url.startswith("/"):
-                pom_url = urljoin(base_url.rstrip("/") + "/", pom_url.lstrip("/"))
-
-            logger.info(f"Скачивание POM: {pom_url}")
-            try:
-                pom_resp = self._request("get", pom_url, timeout=10, allow_429_retry=False)
-                pom_resp.raise_for_status()
-                g, a, v, p = self._parse_pom_coordinates(pom_resp.text)
-                if a == artifact_id and v == version:
-                    doc = {"g": g, "a": a, "v": v}
-                    if p:
-                        doc["p"] = p
-                    logger.info(f"✅ Найдено в Artifactory: {g}:{a}:{v}")
-                    return self._build_dependency_xml(doc)
-            except requests.exceptions.RequestException as e:
-                logger.warning(f"Не удалось скачать/распарсить POM: {pom_url} — {e}")
-                continue
-
-        logger.warning(f"❌ POM {pom_name} не найден в {base_url}")
-        return None
-
-    # -------------------------------------------------------------------------
-    #   Парсинг POM-файла
-    # -------------------------------------------------------------------------
-
-    @staticmethod
-    def _parse_pom_coordinates(pom_xml_text):
+    def find_many_by_repo1_urls(self, artifact_urls: List[str]) -> List[MavenSearchResult]:
         """
-        Парсит координаты из POM: groupId, artifactId, version, packaging.
-        Учитывает namespace и наследование groupId/version от <parent>.
+        Высокоуровневый метод: обработать список URL по одному и вернуть список результатов.
+
+        Важно:
+          Здесь нет "батчевого" API-вызова к Central.
+          Поэтому каждый URL обрабатывается отдельно тем же сценарием,
+          что и find_by_repo1_url().
+
+        Аргументы:
+          artifact_urls:
+            Список URL вида https://repo1.maven.org/maven2/.../<artifactId>/<version>/
+
+        Возвращает:
+          Список MavenSearchResult в том же порядке, что и входные URL.
         """
-        try:
-            root = ET.fromstring(pom_xml_text)
-        except ET.ParseError:
-            return None, None, None, None
+        results: List[MavenSearchResult] = []
 
-        # Namespace (если есть)
-        if root.tag.startswith("{"):
-            ns = {"m": root.tag.split("}")[0].strip("{")}
+        for artifact_url in artifact_urls:
+            results.append(self.find_by_repo1_url(artifact_url))
 
-            def find(path):
-                return root.find(path, namespaces=ns)
-
-            def findtext(path):
-                return root.findtext(path, namespaces=ns)
-        else:
-            ns = None
-
-            def find(path):
-                return root.find(path)
-
-            def findtext(path):
-                return root.findtext(path)
-
-        g = findtext("m:groupId" if ns else "groupId")
-        a = findtext("m:artifactId" if ns else "artifactId")
-        v = findtext("m:version" if ns else "version")
-        p = findtext("m:packaging" if ns else "packaging")
-
-        # Наследуем groupId/version от <parent>, если их нет в текущем POM
-        parent = find("m:parent" if ns else "parent")
-        if parent is not None:
-            if not g:
-                g = (
-                    parent.findtext("m:groupId" if ns else "groupId", namespaces=ns)
-                    if ns else parent.findtext("groupId")
-                )
-            if not v:
-                v = (
-                    parent.findtext("m:version" if ns else "version", namespaces=ns)
-                    if ns else parent.findtext("version")
-                )
-
-        return g, a, v, p
+        return results
